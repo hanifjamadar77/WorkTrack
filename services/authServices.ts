@@ -1,5 +1,5 @@
 import { account, databases } from "./appwrite";
-import { ID } from "appwrite";
+import { ID } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../constants/config";
 
 export const signupUser = async (
@@ -8,18 +8,18 @@ export const signupUser = async (
   name: string
 ) => {
   try {
-    // create auth account
+    // 1️⃣ create auth account
     const user = await account.create(ID.unique(), email, password, name);
 
-    // create profile in database
+    // 2️⃣ create user profile document
     await databases.createDocument(
       APPWRITE_CONFIG.DATABASE_ID,
       APPWRITE_CONFIG.USER_COLLECTION_ID,
       ID.unique(),
       {
         userId: user.$id,
-        name,
-        email,
+        name: name,
+        email: email,
         avatar: "",
         daySalary: 0,
         nightSalary: 0,
@@ -29,6 +29,7 @@ export const signupUser = async (
 
     return user;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
