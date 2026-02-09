@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
+  ScrollView,
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
   TextInput,
-  Alert
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { databases, account } from "../../services/appwrite";
@@ -19,6 +21,7 @@ export default function CalendarScreen() {
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
   const [markedDates, setMarkedDates] = useState<any>({});
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadAttendance();
@@ -120,9 +123,19 @@ const saveAttendance = async () => {
   }
 };
 
+const onRefresh = async () => {
+  setRefreshing(true);
+  await loadAttendance();
+  setRefreshing(false);
+};
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <Calendar markedDates={markedDates} onDayPress={openModal} />
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -167,7 +180,7 @@ const saveAttendance = async () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 

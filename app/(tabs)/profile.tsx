@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   Image,
+  RefreshControl,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { databases, account, storage } from "../../services/appwrite";
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
   const [daySalary, setDaySalary] = useState("");
   const [nightSalary, setNightSalary] = useState("");
   const [halfSalary, setHalfSalary] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -131,8 +133,19 @@ export default function ProfileScreen() {
     }
   };
 
+const onRefresh = async () => {
+  setRefreshing(true);
+  await loadProfile();
+  setRefreshing(false);
+};
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <Text style={styles.header}>My Profile</Text>
 
       {/* Avatar */}
