@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  ScrollView,
   View,
   Text,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   TextInput,
   Alert,
   RefreshControl,
+  ScrollView
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { databases, account } from "../../services/appwrite";
@@ -130,12 +130,12 @@ const onRefresh = async () => {
 };
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
+    <ScrollView 
+    style={styles.container}
+    refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
+  }
+  >
       <Calendar markedDates={markedDates} onDayPress={openModal} />
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -185,7 +185,7 @@ const onRefresh = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10 },
+  container: { flex: 1, padding: 10 , paddingBottom: 90},
 
   modalContainer: {
     flex: 1,

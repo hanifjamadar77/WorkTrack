@@ -205,7 +205,7 @@ const onRefresh = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { padding: 20, paddingBottom: 90 },
   header: { fontSize: 26, fontWeight: "bold", marginBottom: 20 },
 
   avatarContainer: {

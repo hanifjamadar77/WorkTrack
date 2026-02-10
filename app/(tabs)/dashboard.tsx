@@ -6,11 +6,16 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { databases, account } from "../../services/appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { router } from "expo-router";
 
 export default function DashboardScreen() {
+  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
@@ -64,6 +69,10 @@ export default function DashboardScreen() {
         (doc: any) => doc.userId === user.$id,
       );
 
+      if (profile) {
+        setUserName(profile.name);
+      }
+
       const daySalary = profile?.daySalary || 0;
       const nightSalary = profile?.nightSalary || 0;
       const halfSalary = profile?.halfDaySalary || 0;
@@ -81,7 +90,7 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -93,6 +102,14 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
+  const totalDaysInMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth() + 1,
+    0,
+  ).getDate();
+
+  const progressPercent = Math.round((stats.days / totalDaysInMonth) * 100);
+
   return (
     <ScrollView
       style={styles.container}
@@ -100,26 +117,65 @@ export default function DashboardScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Text style={styles.header}>Dashboard</Text>
-      <View style={styles.card}>
-        <Text style={styles.label}>Days Worked</Text>
-        <Text style={styles.value}>{stats.days}</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.label}>Night Shifts</Text>
-        <Text style={styles.value}>{stats.nights}</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.label}>Half Days</Text>
-        <Text style={styles.value}>{stats.half}</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.label}>Absent</Text>
-        <Text style={styles.value}>{stats.absent}</Text>
-      </View>
-      <View style={styles.salaryCard}>
-        <Text style={styles.salaryLabel}>Monthly Salary</Text>
+      {/* Header */}
+      <Text style={styles.welcome}>Hii {userName}👋</Text>
+      <Text style={styles.subText}>Here is your work summary</Text>
+
+      {/* Gradient Salary Card */}
+      <LinearGradient colors={["#4CAF50", "#2E7D32"]} style={styles.salaryCard}>
+        <Text style={styles.salaryLabel}>Monthly Earnings</Text>
         <Text style={styles.salaryValue}>₹ {stats.salary}</Text>
+      </LinearGradient>
+
+      {/* Progress Section */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressText}>Monthly Work Progress</Text>
+          <Text style={styles.progressPercent}>{progressPercent}%</Text>
+        </View>
+
+        <View style={styles.progressBarBg}>
+          <View
+            style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+          />
+        </View>
+      </View>
+
+      {/* Stats Grid */}
+      <View style={styles.grid}>
+        <View style={styles.statCard}>
+          <Ionicons name="sunny" size={26} color="#4CAF50" />
+          <Text style={styles.statNumber}>{stats.days}</Text>
+          <Text style={styles.statLabel}>Days Worked</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <Ionicons name="moon" size={26} color="#555" />
+          <Text style={styles.statNumber}>{stats.nights}</Text>
+          <Text style={styles.statLabel}>Night Shifts</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <Ionicons name="time" size={26} color="#FFC107" />
+          <Text style={styles.statNumber}>{stats.half}</Text>
+          <Text style={styles.statLabel}>Half Days</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <Ionicons name="close-circle" size={26} color="#F44336" />
+          <Text style={styles.statNumber}>{stats.absent}</Text>
+          <Text style={styles.statLabel}>Absent</Text>
+        </View>
+
+        {/* Mark Today Button */}
+        <View style={{ width: "100%", alignItems: "center" }}>
+        <TouchableOpacity
+          style={styles.markButton}
+          onPress={() => router.push("/(tabs)/calendar")}
+        >
+          <Text style={styles.markButtonText}>Mark Attendance</Text>
+        </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -127,45 +183,124 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 20,
+    paddingBottom: 100,
   },
-  header: {
+
+  welcome: {
     fontSize: 26,
     fontWeight: "bold",
+    marginBottom: 5,
+  },
+
+  subText: {
+    fontSize: 14,
+    color: "#666",
     marginBottom: 20,
   },
-  card: {
-    backgroundColor: "#f2f2f2",
-    padding: 18,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    color: "#555",
-  },
-  value: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
+
   salaryCard: {
-    backgroundColor: "#4CAF50",
-    padding: 20,
-    borderRadius: 12,
-    marginTop: 10,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
   },
+
   salaryLabel: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
   },
+
   salaryValue: {
     color: "#fff",
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
+    marginTop: 6,
   },
-  center: {
-    flex: 1,
-    justifyContent: "center",
+
+  progressContainer: {
+    marginBottom: 25,
+  },
+
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 8,
+  },
+
+  progressText: {
+    fontWeight: "600",
+    fontSize: 15,
+    color: "#333",
+  },
+
+  progressPercent: {
+    fontWeight: "bold",
+    color: "#4CAF50",
+    fontSize: 16,
+  },
+
+  progressBarBg: {
+    height: 14,
+    backgroundColor: "#eaeaea",
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 20,
+  },
+
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+
+  statCard: {
+    width: "48%",
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 6,
+  },
+
+  statLabel: {
+    marginTop: 4,
+    color: "#666",
+  },
+  markButton: {
+    backgroundColor: "#4CAF50",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  markButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
