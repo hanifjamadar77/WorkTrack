@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { databases, account } from "../../services/appwrite";
@@ -25,10 +26,13 @@ export default function DashboardScreen() {
     absent: 0,
     salary: 0,
   });
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedMonth]);
 
   const fetchDashboardData = async () => {
     try {
@@ -48,16 +52,21 @@ export default function DashboardScreen() {
       let half = 0;
       let absent = 0;
 
-      attendance.forEach((item: any) => {
-        if (item.status === "day") days++;
-        if (item.status === "night") nights++;
-        if (item.status === "day_night") {
-          days++;
-          nights++;
-        }
-        if (item.status === "half") half++;
-        if (item.status === "absent") absent++;
-      });
+      attendance
+        .filter((item: any) => {
+          const monthFromDate = parseInt(item.date.split("-")[1]) - 1;
+          return monthFromDate === selectedMonth;
+        })
+        .forEach((item: any) => {
+          if (item.status === "day") days++;
+          if (item.status === "night") nights++;
+          if (item.status === "day_night") {
+            days++;
+            nights++;
+          }
+          if (item.status === "half") half++;
+          if (item.status === "absent") absent++;
+        });
 
       // Fetch salary settings
       const profileRes = await databases.listDocuments(
@@ -104,7 +113,7 @@ export default function DashboardScreen() {
 
   const totalDaysInMonth = new Date(
     new Date().getFullYear(),
-    new Date().getMonth() + 1,
+    selectedMonth + 1,
     0,
   ).getDate();
 
@@ -118,8 +127,35 @@ export default function DashboardScreen() {
       }
     >
       {/* Header */}
-      <Text style={styles.welcome}>Hii {userName}👋</Text>
-      <Text style={styles.subText}>Here is your work summary</Text>
+      <View style={styles.headerRow}>
+        <View style= {{flexDirection: "column",}}>
+            <Text style={styles.welcome}>Hi {userName} 👋</Text>
+            <Text style={styles.subText}>Here is your work summary</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.monthBox}
+          onPress={() => setShowMonthPicker(true)}
+        >
+          <Text style={styles.monthText}>
+            {
+              [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ][selectedMonth]
+            }
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Gradient Salary Card */}
       <LinearGradient colors={["#4CAF50", "#2E7D32"]} style={styles.salaryCard}>
@@ -169,14 +205,46 @@ export default function DashboardScreen() {
 
         {/* Mark Today Button */}
         <View style={{ width: "100%", alignItems: "center" }}>
-        <TouchableOpacity
-          style={styles.markButton}
-          onPress={() => router.push("/(tabs)/calendar")}
-        >
-          <Text style={styles.markButtonText}>Mark Attendance</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.markButton}
+            onPress={() => router.push("/(tabs)/calendar")}
+          >
+            <Text style={styles.markButtonText}>Mark Attendance</Text>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Month Picker Modal */}
+      <Modal visible={showMonthPicker} transparent animationType="slide">
+        <View style={styles.modalBg}>
+          <View style={styles.monthModal}>
+            {[
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ].map((month, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  setSelectedMonth(index);
+                  setShowMonthPicker(false);
+                }}
+              >
+                <Text style={styles.monthItem}>{month}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -188,6 +256,30 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  monthBox: {
+    flex: 0,
+    height:60,
+    width:60,
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    marginBottom: 10,
+     shadowColor: "#000",
+     shadowOpacity: 0.2,
+     justifyContent: "center",
+  },
+  monthText: {
+    fontWeight: "600",
+    fontSize: 18,
+    color: "#fff",
+     textAlign: "center",
+    textAlignVertical: "center",
+  },
   welcome: {
     fontSize: 26,
     fontWeight: "bold",
@@ -302,5 +394,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  modalBg: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+
+  monthModal: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+
+  monthItem: {
+    padding: 15,
+    fontSize: 16,
   },
 });

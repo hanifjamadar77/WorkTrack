@@ -8,7 +8,7 @@ import {
   TextInput,
   Alert,
   RefreshControl,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { databases, account } from "../../services/appwrite";
@@ -22,10 +22,13 @@ export default function CalendarScreen() {
   const [note, setNote] = useState("");
   const [markedDates, setMarkedDates] = useState<any>({});
   const [refreshing, setRefreshing] = useState(false);
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const currentMonthDate = today.toISOString().split("T")[0];
 
   useEffect(() => {
     loadAttendance();
-  }, []);
+  }, [selectedMonth]);
 
   const loadAttendance = async () => {
     try {
@@ -33,29 +36,34 @@ export default function CalendarScreen() {
 
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
-        APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID
+        APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
       );
 
       const userAttendance = response.documents.filter(
-        (doc: any) => doc.userId === user.$id
+        (doc: any) => doc.userId === user.$id,
       );
 
       const marks: any = {};
 
-      userAttendance.forEach((item: any) => {
-        let color = "";
+      userAttendance
+        .filter((item: any) => {
+          const monthFromDate = parseInt(item.date.split("-")[1]) - 1;
+          return monthFromDate === selectedMonth;
+        })
+        .forEach((item: any) => {
+          let color = "";
 
-        if (item.status === "day") color = "green";
-        if (item.status === "night") color = "gray";
-        if (item.status === "day_night") color = "purple";
-        if (item.status === "half") color = "yellow";
-        if (item.status === "absent") color = "red";
+          if (item.status === "day") color = "green";
+          if (item.status === "night") color = "gray";
+          if (item.status === "day_night") color = "purple";
+          if (item.status === "half") color = "yellow";
+          if (item.status === "absent") color = "red";
 
-        marks[item.date] = {
-          selected: true,
-          selectedColor: color
-        };
-      });
+          marks[item.date] = {
+            selected: true,
+            selectedColor: color,
+          };
+        });
 
       setMarkedDates(marks);
     } catch (err) {
@@ -68,75 +76,81 @@ export default function CalendarScreen() {
     setModalVisible(true);
   };
 
-const saveAttendance = async () => {
-  try {
-    const user = await account.get();
+  const saveAttendance = async () => {
+    try {
+      const user = await account.get();
 
-    // Step 1: check if attendance already exists for this date
-    const response = await databases.listDocuments(
-      APPWRITE_CONFIG.DATABASE_ID,
-      APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID
-    );
-
-    const existing = response.documents.find(
-      (doc: any) =>
-        doc.userId === user.$id && doc.date === selectedDate
-    );
-
-    if (existing) {
-      // Step 2: update existing attendance
-      await databases.updateDocument(
+      // Step 1: check if attendance already exists for this date
+      const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
-        existing.$id,
-        {
-          status: status,
-          note: note
-        }
       );
 
-      Alert.alert("Updated", "Attendance updated successfully");
-    } else {
-      // Step 3: create new attendance
-      await databases.createDocument(
-        APPWRITE_CONFIG.DATABASE_ID,
-        APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
-        ID.unique(),
-        {
-          userId: user.$id,
-          date: selectedDate,
-          status: status,
-          note: note
-        }
+      const existing = response.documents.find(
+        (doc: any) => doc.userId === user.$id && doc.date === selectedDate,
       );
 
-      Alert.alert("Saved", "Attendance saved successfully");
+      if (existing) {
+        // Step 2: update existing attendance
+        await databases.updateDocument(
+          APPWRITE_CONFIG.DATABASE_ID,
+          APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+          existing.$id,
+          {
+            status: status,
+            note: note,
+          },
+        );
+
+        Alert.alert("Updated", "Attendance updated successfully");
+      } else {
+        // Step 3: create new attendance
+        await databases.createDocument(
+          APPWRITE_CONFIG.DATABASE_ID,
+          APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+          ID.unique(),
+          {
+            userId: user.$id,
+            date: selectedDate,
+            status: status,
+            note: note,
+          },
+        );
+
+        Alert.alert("Saved", "Attendance saved successfully");
+      }
+
+      setModalVisible(false);
+      setStatus("");
+      setNote("");
+
+      loadAttendance(); // refresh calendar
+    } catch (err) {
+      Alert.alert("Error", "Failed to save attendance");
     }
+  };
 
-    setModalVisible(false);
-    setStatus("");
-    setNote("");
-
-    loadAttendance(); // refresh calendar
-  } catch (err) {
-    Alert.alert("Error", "Failed to save attendance");
-  }
-};
-
-const onRefresh = async () => {
-  setRefreshing(true);
-  await loadAttendance();
-  setRefreshing(false);
-};
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAttendance();
+    setRefreshing(false);
+  };
 
   return (
-    <ScrollView 
-    style={styles.container}
-    refreshControl={
+    <ScrollView
+      style={styles.container}
+      refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-  }
-  >
-      <Calendar markedDates={markedDates} onDayPress={openModal} />
+      }
+    >
+      <Calendar
+        current={currentMonthDate}
+        markedDates={markedDates}
+        onDayPress={openModal}
+        onMonthChange={(month) => {
+          setSelectedMonth(month.month - 1);
+        }}
+      />
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
@@ -185,48 +199,48 @@ const onRefresh = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10 , paddingBottom: 90},
+  container: { flex: 1, padding: 10, paddingBottom: 90 },
 
   modalContainer: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)"
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   modal: {
     backgroundColor: "#fff",
     margin: 20,
     padding: 20,
-    borderRadius: 12
+    borderRadius: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 15
+    marginBottom: 15,
   },
   option: {
     fontSize: 16,
-    padding: 10
+    padding: 10,
   },
   input: {
     borderWidth: 1,
     padding: 10,
     marginTop: 10,
-    borderRadius: 8
+    borderRadius: 8,
   },
   saveBtn: {
     backgroundColor: "#4CAF50",
     padding: 12,
     borderRadius: 8,
-    marginTop: 15
+    marginTop: 15,
   },
   saveText: {
     color: "#fff",
     textAlign: "center",
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   cancel: {
     textAlign: "center",
     marginTop: 10,
-    color: "red"
-  }
+    color: "red",
+  },
 });
