@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState} from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { databases, account } from "../../services/appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { router } from "expo-router";
+import { useFocusEffect } from "expo-router";
 
 export default function DashboardScreen() {
   const [userName, setUserName] = useState("");
@@ -30,9 +31,11 @@ export default function DashboardScreen() {
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     fetchDashboardData();
-  }, [selectedMonth]);
+  }, [selectedMonth])
+);
 
   const fetchDashboardData = async () => {
     try {

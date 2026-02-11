@@ -14,6 +14,8 @@ import * as ImagePicker from "expo-image-picker";
 import { databases, account, storage } from "../../services/appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { ID } from "react-native-appwrite";
+import Input from "../../components/Input";
+import AppInput from "../../components/Input";
 
 export default function ProfileScreen() {
   const [profileId, setProfileId] = useState("");
@@ -52,7 +54,6 @@ export default function ProfileScreen() {
       setNightSalary(String(profile.nightSalary || ""));
       setHalfSalary(String(profile.halfDaySalary || ""));
     }
-    
   };
 
   // 📸 Pick image
@@ -103,8 +104,7 @@ export default function ProfileScreen() {
 
       Alert.alert("Avatar updated");
       console.log("Updating profile ID:", profileId);
-        console.log("Saving avatar URL:", fileUrl);
-
+      console.log("Saving avatar URL:", fileUrl);
     } catch (err) {
       console.log(err);
       Alert.alert("Upload failed");
@@ -133,21 +133,20 @@ export default function ProfileScreen() {
     }
   };
 
-const onRefresh = async () => {
-  setRefreshing(true);
-  await loadProfile();
-  setRefreshing(false);
-};
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
 
   return (
     <ScrollView
-      style={styles.container}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Text style={styles.header}>My Profile</Text>
-
       {/* Avatar */}
       <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
         {avatarUrl ? (
@@ -163,38 +162,46 @@ const onRefresh = async () => {
         )}
       </TouchableOpacity>
 
-      {/* Name */}
-      <Text style={styles.label}>Name</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} />
+      <AppInput
+        label="Full Name"
+        placeholder="Enter your name"
+        value={name}
+        onChangeText={setName}
+        icon="person"
+      />
 
-      {/* Email */}
-      <Text style={styles.label}>Email</Text>
-      <TextInput style={styles.input} value={email} editable={false} />
+      <AppInput
+        label="Email"
+        placeholder="Enter email"
+        value={email}
+        onChangeText={setEmail}
+        icon="mail"
+      />
 
       <Text style={styles.section}>Salary Settings</Text>
 
-      <TextInput
-        placeholder="Day Salary"
-        style={styles.input}
-        keyboardType="numeric"
+      <AppInput
+        label="Day Salary"
+        placeholder="Enter amount"
         value={daySalary}
         onChangeText={setDaySalary}
+        icon="cash"
       />
 
-      <TextInput
-        placeholder="Night Salary"
-        style={styles.input}
-        keyboardType="numeric"
+      <AppInput
+        label="Night Salary"
+        placeholder="Enter night salary"
         value={nightSalary}
         onChangeText={setNightSalary}
+        icon="moon"
       />
 
-      <TextInput
-        placeholder="Half Day Salary"
-        style={styles.input}
-        keyboardType="numeric"
+      <AppInput
+        label="Half Day Salary"
+        placeholder="Enter half day salary"
         value={halfSalary}
         onChangeText={setHalfSalary}
+        icon="time"
       />
 
       <TouchableOpacity style={styles.button} onPress={updateProfile}>
@@ -205,7 +212,7 @@ const onRefresh = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 90 },
+  container: { padding: 20, paddingBottom: 120 },
   header: { fontSize: 26, fontWeight: "bold", marginBottom: 20 },
 
   avatarContainer: {
