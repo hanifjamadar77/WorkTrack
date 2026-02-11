@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
   Alert,
@@ -14,7 +13,6 @@ import * as ImagePicker from "expo-image-picker";
 import { databases, account, storage } from "../../services/appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { ID } from "react-native-appwrite";
-import Input from "../../components/Input";
 import AppInput from "../../components/Input";
 
 export default function ProfileScreen() {
