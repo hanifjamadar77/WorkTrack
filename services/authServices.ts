@@ -26,6 +26,8 @@ export const signupUser = async (
         halfDaySalary: 0
       }
     );
+  // create session immediately after signup
+  await account.createEmailPasswordSession(email, password);
 
     return user;
   } catch (error) {

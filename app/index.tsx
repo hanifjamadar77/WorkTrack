@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Alert,
   StyleSheet,
   ImageBackground,
   ScrollView,
@@ -12,10 +13,26 @@ import {
 
 import AppInput from "../components/Input";
 import { router } from "expo-router";
+import { loginUser } from "../services/authServices";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert("Error", "Email and password required");
+    return;
+  }
+
+  try {
+    await loginUser(email, password); // your auth service
+    router.replace("./(tabs)/dashboard");
+  } catch (err: any) {
+    Alert.alert("Login Failed", err.message);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView
@@ -59,7 +76,7 @@ export default function LoginScreen() {
               icon="lock-closed"
             />
 
-            <TouchableOpacity style={styles.loginBtn}>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
               <Text style={styles.loginText}>Login</Text>
             </TouchableOpacity>
 
