@@ -16,6 +16,8 @@ import { databases, account, storage } from "../../services/appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { ID } from "react-native-appwrite";
 import AppInput from "../../components/Input";
+import { logoutUser } from "../../services/authServices";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
   const [profileId, setProfileId] = useState("");
@@ -211,6 +213,16 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.button} onPress={updateProfile}>
           <Text style={styles.buttonText}>Save Changes</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={async () => {
+            await account.deleteSession("current");
+            router.replace("/");
+          }}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -267,5 +279,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+  },
+  logoutBtn: {
+    backgroundColor: "#F44336",
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 30,
+    alignItems: "center",
+  },
+
+  logoutText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
