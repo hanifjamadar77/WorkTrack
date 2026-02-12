@@ -8,6 +8,8 @@ import {
   ScrollView,
   Image,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { databases, account, storage } from "../../services/appwrite";
@@ -138,74 +140,79 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Avatar */}
-      <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={{ fontSize: 30 }}>👤</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Avatar */}
+        <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+          {avatarUrl ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={{ fontSize: 30 }}>👤</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-      <AppInput
-        label="Full Name"
-        placeholder="Enter your name"
-        value={name}
-        onChangeText={setName}
-        icon="person"
-      />
+        <AppInput
+          label="Full Name"
+          placeholder="Enter your name"
+          value={name}
+          onChangeText={setName}
+          icon="person"
+        />
 
-      <AppInput
-        label="Email"
-        placeholder="Enter email"
-        value={email}
-        onChangeText={setEmail}
-        icon="mail"
-      />
+        <AppInput
+          label="Email"
+          placeholder="Enter email"
+          value={email}
+          onChangeText={setEmail}
+          icon="mail"
+        />
 
-      <Text style={styles.section}>Salary Settings</Text>
+        <Text style={styles.section}>Salary Settings</Text>
 
-      <AppInput
-        label="Day Salary"
-        placeholder="Enter amount"
-        value={daySalary}
-        onChangeText={setDaySalary}
-        icon="cash"
-      />
+        <AppInput
+          label="Day Salary"
+          placeholder="Enter amount"
+          value={daySalary}
+          onChangeText={setDaySalary}
+          icon="cash"
+        />
 
-      <AppInput
-        label="Night Salary"
-        placeholder="Enter night salary"
-        value={nightSalary}
-        onChangeText={setNightSalary}
-        icon="moon"
-      />
+        <AppInput
+          label="Night Salary"
+          placeholder="Enter night salary"
+          value={nightSalary}
+          onChangeText={setNightSalary}
+          icon="moon"
+        />
 
-      <AppInput
-        label="Half Day Salary"
-        placeholder="Enter half day salary"
-        value={halfSalary}
-        onChangeText={setHalfSalary}
-        icon="time"
-      />
+        <AppInput
+          label="Half Day Salary"
+          placeholder="Enter half day salary"
+          value={halfSalary}
+          onChangeText={setHalfSalary}
+          icon="time"
+        />
 
-      <TouchableOpacity style={styles.button} onPress={updateProfile}>
-        <Text style={styles.buttonText}>Save Changes</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.button} onPress={updateProfile}>
+          <Text style={styles.buttonText}>Save Changes</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
