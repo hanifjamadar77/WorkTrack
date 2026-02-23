@@ -1,7 +1,6 @@
 # 📱 WorkTrack – Worker Attendance & Salary Tracker
 
 WorkTrack is a mobile application built using React Native and Appwrite that helps daily workers track their attendance, work shifts, and calculate salary automatically based on their work records.
-https://github.com/hanifjamadar77/WorkTrack
 This app is designed especially for electricians, labor workers, and field professionals who need a simple daily work tracking system.
 
 ---
