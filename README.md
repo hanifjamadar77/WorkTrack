@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# 📱 WorkTrack – Worker Attendance & Salary Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+WorkTrack is a mobile application built using React Native and Appwrite that helps daily workers track their attendance, work shifts, and calculate salary automatically based on their work records.
+This app is designed especially for electricians, labor workers, and field professionals who need a simple daily work tracking system.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
-   ```bash
-   npm install
-   ```
+- 📅 Calendar-based attendance tracking
+- 🟢 Mark Day / Night / Half Day / Absent
+- 📝 Add notes for each working day
+- 📊 Dashboard with monthly statistics
+- 💰 Automatic salary calculation
+- 👤 User profile with salary configuration
+- 🔐 Secure authentication using Appwrite
+- ☁️ Cloud database storage
+- 📱 Android mobile app (APK supported)
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🛠 Tech Stack
 
-In the output, you'll find options to open the app in a
+### Frontend
+- React Native (Expo)
+- TypeScript
+- Expo Router
+- React Native Calendars
+- Ionicons
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Backend
+- Appwrite Authentication
+- Appwrite Database
+- Appwrite Storage
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 📷 Screenshots
 
-When you're ready, run:
+| Dashboard | Calendar | Profile |
+|----------|---------|---------|
+|<img src="https://github.com/user-attachments/assets/82467ef7-a08c-43e0-8eec-544af65df86b" width="250"/>| <img src="https://github.com/user-attachments/assets/2e51ca7a-8438-4390-9da0-f2509c5d9581" width="250"/>|<img src="https://github.com/user-attachments/assets/deadcfa7-9e89-470e-8643-cc77c18effac" width="250"/>
 
-```bash
-npm run reset-project
-```
+## 📱 APK Download
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+You can download and test the Android application using the link below:
 
-## Learn more
+👉 [Download APK](https://github.com/hanifjamadar77/WorkTrack/releases)
 
-To learn more about developing your project with Expo, look at the following resources:
+> Note: Enable "Install from Unknown Sources" on your Android device.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+⭐ Star this repo if you find it helpful!
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
