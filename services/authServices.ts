@@ -37,7 +37,16 @@ export const signupUser = async (email: string, password: string, name: string) 
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    await account.createEmailPasswordSession(email, password);
+    // Always delete any existing session first
+    try {
+      await account.deleteSession("current");
+    } catch {}
+
+    await account.createEmailPasswordSession(
+      email.trim(),
+      password.trim()
+    );
+
   } catch (error: any) {
     console.log("LOGIN ERROR:", error);
     throw new Error("Invalid email or password");

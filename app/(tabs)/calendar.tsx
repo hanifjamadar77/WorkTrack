@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { Query } from "react-native-appwrite";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TextInput,
   Alert,
+  Modal,
   RefreshControl,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Calendar } from "react-native-calendars";
-import { databases, account } from "../../services/appwrite";
-import { APPWRITE_CONFIG } from "../../constants/config";
 import { ID } from "react-native-appwrite";
+import { Calendar } from "react-native-calendars";
+import { APPWRITE_CONFIG } from "../../constants/config";
+import { account, databases } from "../../services/appwrite";
 
 export default function CalendarScreen() {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [modalVisible, setModalVisible] = useState(false);
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
@@ -25,6 +26,8 @@ export default function CalendarScreen() {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const currentMonthDate = today.toISOString().split("T")[0];
+
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadAttendance();
@@ -101,6 +104,9 @@ export default function CalendarScreen() {
   };
 
   const saveAttendance = async () => {
+    if (saving) return; // prevent double click
+
+    setSaving(true);
     try {
       const user = await account.get();
 
@@ -108,27 +114,26 @@ export default function CalendarScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+        [
+          Query.equal("userId", user.$id),
+          Query.equal("date", selectedDate),
+          Query.limit(1),
+        ],
       );
 
-      const existing = response.documents.find(
-        (doc: any) => doc.userId === user.$id && doc.date === selectedDate,
-      );
+      if (response.documents.length > 0) {
+        const existing = response.documents[0];
 
-      if (existing) {
-        // Step 2: update existing attendance
         await databases.updateDocument(
           APPWRITE_CONFIG.DATABASE_ID,
           APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
           existing.$id,
           {
-            status: status,
-            note: note,
+            status,
+            note,
           },
         );
-
-        Alert.alert("Updated", "Attendance updated successfully");
       } else {
-        // Step 3: create new attendance
         await databases.createDocument(
           APPWRITE_CONFIG.DATABASE_ID,
           APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
@@ -136,12 +141,10 @@ export default function CalendarScreen() {
           {
             userId: user.$id,
             date: selectedDate,
-            status: status,
-            note: note,
+            status,
+            note,
           },
         );
-
-        Alert.alert("Saved", "Attendance saved successfully");
       }
 
       setModalVisible(false);
@@ -151,6 +154,8 @@ export default function CalendarScreen() {
       loadAttendance(); // refresh calendar
     } catch (err) {
       Alert.alert("Error", "Failed to save attendance");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -245,7 +250,11 @@ export default function CalendarScreen() {
               onChangeText={setNote}
             />
 
-            <TouchableOpacity style={styles.saveBtn} onPress={saveAttendance}>
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={saveAttendance}
+              disabled={saving}
+            >
               <Text style={styles.saveText}>Save</Text>
             </TouchableOpacity>
 
