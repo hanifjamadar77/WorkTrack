@@ -1,45 +1,86 @@
-import { Stack } from "expo-router";
+// import { Stack, router } from "expo-router";
+// import { useEffect, useState } from "react";
+// import { ActivityIndicator, View } from "react-native";
+// import { account } from "../services/appwrite";
+
+// export default function RootLayout() {
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const checkSession = async () => {
+//       try {
+//         await account.get();
+
+//         // Session exists → go to dashboard
+//         router.replace("/(tabs)/dashboard");
+//       } catch (error) {
+//         // No session → go to login
+//         router.replace("/");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     checkSession();
+//   }, []);
+
+//   if (loading) {
+//     return (
+//       <View
+//         style={{
+//           flex: 1,
+//           justifyContent: "center",
+//           alignItems: "center",
+//         }}
+//       >
+//         <ActivityIndicator size="large" />
+//       </View>
+//     );
+//   }
+
+//   return <Stack screenOptions={{ headerShown: false }} />;
+// }
+
+
+import { account } from "../services/appwrite"; // ✅ import your appwrite.tsx config
+import { Slot, useRouter} from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { account } from "../services/appwrite";
 
-export default function RootLayout() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export default function Layout() {
+  const router = useRouter();
 
-  const checkUser = async () => {
-    try {
-      const currentUser = await account.get();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  // ✅ Check Appwrite session on mount
   useEffect(() => {
-    checkUser();
+    const checkAuth = async () => {
+      try {
+        const user = await account.get(); // fetch current user
+        setIsAuthenticated(true);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  // ✅ Handle redirects based on auth state
+  useEffect(() => {
+    if (isAuthenticated === null) return; // wait until auth check completes
 
+    if (!isAuthenticated) {
+      router.replace("/"); // guest → login
+    } else if (isAuthenticated) {
+      router.replace("/(tabs)/dashboard"); // logged-in → seeker dashboard
+    }
+  }, [isAuthenticated]);
+
+  if (isAuthenticated === null) {
+    // ✅ simple splash/loading screen
+    return null;
+  }
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {!user ? (
-        <>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="signup" />
-        </>
-      ) : (
-        <Stack.Screen name="(tabs)" />
-      )}
-    </Stack>
+        <Slot /> 
   );
 }

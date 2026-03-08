@@ -27,6 +27,7 @@ export default function LoginScreen() {
 
   try {
     await loginUser(email, password); // your auth service
+    Alert.alert("Success", "Logged in successfully");
     router.replace("./(tabs)/dashboard");
   } catch (err: any) {
     Alert.alert("Login Failed", err.message);

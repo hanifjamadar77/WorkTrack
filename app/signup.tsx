@@ -28,7 +28,7 @@ export default function SignupScreen() {
     try {
       await signupUser(email, password, name);
       Alert.alert("Success", "Account created successfully");
-      router.replace("./(tabs)/dashboard");
+      router.replace("/(tabs)/dashboard");
     } catch (err: any) {
       Alert.alert("Signup Failed", err.message);
     }

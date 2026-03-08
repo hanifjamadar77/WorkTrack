@@ -15,6 +15,7 @@ import { APPWRITE_CONFIG } from "../../constants/config";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router";
+import * as Updates from "expo-updates";
 
 export default function DashboardScreen() {
   const [userName, setUserName] = useState("");
@@ -33,7 +34,22 @@ export default function DashboardScreen() {
 
   useFocusEffect(
   useCallback(() => {
+    const checkUpdate = async () => {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          Updates.reloadAsync();
+        }
+      } catch (e) {
+        console.log("Update check failed:", e);
+      }
+    };
+
     fetchDashboardData();
+    checkUpdate();
+
   }, [selectedMonth])
 );
 

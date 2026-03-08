@@ -1,61 +1,85 @@
-import { account, databases } from "./appwrite";
-import { ID } from "react-native-appwrite";
+import { ID, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../constants/config";
+import { account, databases } from "./appwrite";
 
-export const signupUser = async (email: string, password: string, name: string) => {
+export const signupUser = async (
+  email: string,
+  password: string,
+  name: string,
+) => {
   try {
-    // STEP 1: create auth user
-    await account.create(ID.unique(), email, password, name);
+    // 1️⃣ Create authentication user
+    await account.create(
+      ID.unique(),
+      email.trim(),
+      password.trim(),
+      name.trim(),
+    );
 
-    // STEP 2: login immediately
-    await account.createEmailPasswordSession(email, password);
+    // 2️⃣ Login immediately
+    await account.createEmailPasswordSession(email.trim(), password.trim());
 
+    // 3️⃣ Get current user
     const user = await account.get();
 
-    // STEP 3: create profile
+    // 4️⃣ Create profile document in database
     await databases.createDocument(
       APPWRITE_CONFIG.DATABASE_ID,
       APPWRITE_CONFIG.USER_COLLECTION_ID,
       ID.unique(),
       {
         userId: user.$id,
-        name,
-        email,
-        avatar: "",
+        name: name.trim(),
+        email: email.trim(),
         daySalary: 0,
         nightSalary: 0,
-        halfDaySalary: 0
-      }
+        halfDaySalary: 0,
+        avatar: "",
+      },
     );
-
   } catch (error: any) {
     console.log("SIGNUP ERROR:", error);
-    throw new Error(error.message);
+    throw new Error(error?.message || "Signup failed");
   }
 };
-
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    await account.createEmailPasswordSession(
-      email.trim(),
-      password.trim()
-    );
+    await account.createEmailPasswordSession(email.trim(), password.trim());
   } catch (error: any) {
-    console.log("LOGIN ERROR:", error);
-    throw new Error("Invalid email or password");
+    console.log("LOGIN ERROR:", error?.message);
+    throw new Error(error?.message || "Login failed");
   }
 };
 
+// export const getCurrentUser = async () => {
+//   try {
+//     return await account.get();
+//   } catch (error) {
+//     return null;
+//   }
+// };
 
 export const getCurrentUser = async () => {
   try {
-    return await account.get();
-  } catch (error) {
-    return null;
+    const currentAccount = await account.get();
+    if (!currentAccount) throw new Error("No user logged in");
+
+    const currentUser = await databases.listDocuments(
+      APPWRITE_CONFIG.DATABASE_ID,
+      APPWRITE_CONFIG.USER_COLLECTION_ID,
+      [Query.equal("accountId", [currentAccount.$id])]
+    );
+
+    if (!currentUser || currentUser.total === 0)
+      throw new Error("User not found");
+
+    return currentUser.documents[0];
+  } catch (e : any) {
+    console.error("❌ getCurrentUser error:", e);
+    throw new Error(e?.message || "Failed to fetch user");
   }
 };
-
 
 export const logoutUser = async () => {
   try {
@@ -64,4 +88,3 @@ export const logoutUser = async () => {
     console.log("Logout error:", error);
   }
 };
-
