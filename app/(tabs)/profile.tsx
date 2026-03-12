@@ -177,7 +177,7 @@ export default function ProfileScreen() {
         />
 
         <AppInput
-          label="Email"
+          label="Email(Don't Change❌)"
           placeholder="Enter email"
           value={email}
           onChangeText={setEmail}
