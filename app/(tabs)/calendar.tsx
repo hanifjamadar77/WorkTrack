@@ -40,6 +40,7 @@ export default function CalendarScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+        [Query.equal("userId", user.$id)],
       );
 
       const userAttendance = response.documents.filter(
@@ -68,7 +69,7 @@ export default function CalendarScreen() {
           };
         });
 
-      setMarkedDates(marks);
+      setMarkedDates({ ...marks });
     } catch (err) {
       console.log(err);
     }
@@ -83,6 +84,11 @@ export default function CalendarScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+        [
+          Query.equal("userId", user.$id),
+          Query.equal("date", day.dateString),
+          Query.limit(1),
+        ],
       );
 
       const existing = response.documents.find(

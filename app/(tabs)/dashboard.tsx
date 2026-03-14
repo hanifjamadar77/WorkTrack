@@ -1,21 +1,21 @@
-import React, { useCallback, useEffect, useState} from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  RefreshControl,
-  TouchableOpacity,
-  Modal,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { databases, account } from "../../services/appwrite";
-import { APPWRITE_CONFIG } from "../../constants/config";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { router } from "expo-router";
-import { useFocusEffect } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useFocusEffect } from "expo-router";
 import * as Updates from "expo-updates";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Query } from "react-native-appwrite";
+import { APPWRITE_CONFIG } from "../../constants/config";
+import { account, databases } from "../../services/appwrite";
 
 export default function DashboardScreen() {
   const [userName, setUserName] = useState("");
@@ -33,25 +33,24 @@ export default function DashboardScreen() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   useFocusEffect(
-  useCallback(() => {
-    const checkUpdate = async () => {
-      try {
-        const update = await Updates.checkForUpdateAsync();
+    useCallback(() => {
+      const checkUpdate = async () => {
+        try {
+          const update = await Updates.checkForUpdateAsync();
 
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          Updates.reloadAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            Updates.reloadAsync();
+          }
+        } catch (e) {
+          console.log("Update check failed:", e);
         }
-      } catch (e) {
-        console.log("Update check failed:", e);
-      }
-    };
+      };
 
-    fetchDashboardData();
-    checkUpdate();
-
-  }, [selectedMonth])
-);
+      fetchDashboardData();
+      checkUpdate();
+    }, [selectedMonth]),
+  );
 
   const fetchDashboardData = async () => {
     try {
@@ -60,6 +59,7 @@ export default function DashboardScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+        [Query.equal("userId", user.$id)],
       );
 
       const attendance = response.documents.filter(
@@ -91,6 +91,7 @@ export default function DashboardScreen() {
       const profileRes = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.USER_COLLECTION_ID,
+        [Query.equal("userId", user.$id)]
       );
 
       const profile = profileRes.documents.find(
@@ -147,9 +148,9 @@ export default function DashboardScreen() {
     >
       {/* Header */}
       <View style={styles.headerRow}>
-        <View style= {{flexDirection: "column",}}>
-            <Text style={styles.welcome}>Hi {userName} 👋</Text>
-            <Text style={styles.subText}>Here is your work summary</Text>
+        <View style={{ flexDirection: "column" }}>
+          <Text style={styles.welcome}>Hi {userName} 👋</Text>
+          <Text style={styles.subText}>Here is your work summary</Text>
         </View>
         <TouchableOpacity
           style={styles.monthBox}
@@ -283,20 +284,20 @@ const styles = StyleSheet.create({
 
   monthBox: {
     flex: 0,
-    height:60,
-    width:60,
+    height: 60,
+    width: 60,
     backgroundColor: "#4CAF50",
     borderRadius: 10,
     marginBottom: 10,
-     shadowColor: "#000",
-     shadowOpacity: 0.2,
-     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    justifyContent: "center",
   },
   monthText: {
     fontWeight: "600",
     fontSize: 18,
     color: "#fff",
-     textAlign: "center",
+    textAlign: "center",
     textAlignVertical: "center",
   },
   welcome: {
