@@ -6,6 +6,7 @@ export const signupUser = async (
   email: string,
   password: string,
   name: string,
+  role: string
 ) => {
   try {
     // 1️⃣ Create authentication user
@@ -31,6 +32,7 @@ export const signupUser = async (
         userId: user.$id,
         name: name.trim(),
         email: email.trim(),
+        role: role,
         daySalary: 0,
         nightSalary: 0,
         halfDaySalary: 0,

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { signupUser } from "../services/authServices";
@@ -18,17 +18,35 @@ export default function SignupScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user");
+
+  const isValidEmail = (email: string) => {
+    const regex =
+      /^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(email);
+  };
 
   const handleSignup = async () => {
     if (!name || !email || !password) {
       Alert.alert("Error", "All fields are required");
       return;
     }
-
+    // ✅ Email validation
+    if (!isValidEmail(email)) {
+      Alert.alert("Error", "Enter a valid email address");
+      return;
+    }
     try {
-      await signupUser(email, password, name);
+      await signupUser(email, password, name, role);
+
       Alert.alert("Success", "Account created successfully");
-      router.replace("/(tabs)/dashboard");
+
+      // 🔥 Navigate based on role
+      if (role === "admin") {
+        router.replace("./admin/(tabs)/dashboard");
+      } else {
+        router.replace("/(tabs)/dashboard");
+      }
     } catch (err: any) {
       Alert.alert("Signup Failed", err.message);
     }
@@ -56,10 +74,24 @@ export default function SignupScreen() {
           </View>
         </ImageBackground>
 
+        <View style={{ flexDirection: "row", marginBottom: 40, marginTop: 10 }}>
+          <TouchableOpacity
+            style={[styles.roleBtn, role === "user" && styles.activeRole]}
+            onPress={() => setRole("user")}
+          >
+            <Text style={styles.roleText}>User</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.roleBtn, role === "admin" && styles.activeRole]}
+            onPress={() => setRole("admin")}
+          >
+            <Text style={styles.roleText}>Admin</Text>
+          </TouchableOpacity>
+        </View>
         {/* Form */}
         <View style={styles.formContainer}>
           <View style={styles.card}>
-
             <AppInput
               label="Full Name"
               placeholder="Enter your name"
@@ -90,11 +122,8 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.link}>
-                Already have an account? Login
-              </Text>
+              <Text style={styles.link}>Already have an account? Login</Text>
             </TouchableOpacity>
-
           </View>
         </View>
       </ScrollView>
@@ -105,30 +134,48 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   topImage: {
     height: 260,
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
 
   overlay: {
     backgroundColor: "rgba(0,0,0,0.35)",
-    padding: 20
+    padding: 20,
+  },
+
+  roleBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#ddd",
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+
+  activeRole: {
+    backgroundColor: "#4CAF50",
+  },
+
+  roleText: {
+    fontWeight: "bold",
+    color: "#000",
   },
 
   title: {
     color: "#fff",
     fontSize: 28,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
 
   subtitle: {
     color: "#eee",
-    marginTop: 4
+    marginTop: 4,
   },
 
   formContainer: {
     flexGrow: 1,
     padding: 20,
     backgroundColor: "#f6f6f6",
-    marginTop: -40
+    marginTop: -40,
   },
 
   card: {
@@ -139,7 +186,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 10,
-    elevation: 6
+    elevation: 6,
   },
 
   signupBtn: {
@@ -147,19 +194,19 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     alignItems: "center",
-    marginTop: 10
+    marginTop: 10,
   },
 
   signupText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16
+    fontSize: 16,
   },
 
   link: {
     marginTop: 18,
     textAlign: "center",
     color: "#4CAF50",
-    fontWeight: "600"
-  }
+    fontWeight: "600",
+  },
 });

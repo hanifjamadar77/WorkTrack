@@ -1,18 +1,21 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
   Alert,
-  StyleSheet,
   ImageBackground,
-  ScrollView,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-import AppInput from "../components/Input";
+import { APPWRITE_CONFIG } from "@/constants/config";
+import { account, databases } from "@/services/appwrite";
 import { router } from "expo-router";
+import { Query } from "react-native-appwrite";
+import AppInput from "../components/Input";
 import { loginUser } from "../services/authServices";
 
 export default function LoginScreen() {
@@ -20,20 +23,41 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert("Error", "Email and password required");
-    return;
-  }
+    if (!email || !password) {
+      Alert.alert("Error", "Email and password required");
+      return;
+    }
 
-  try {
-    await loginUser(email, password); // your auth service
-    Alert.alert("Success", "Logged in successfully");
-    router.replace("./(tabs)/dashboard");
-  } catch (err: any) {
-    Alert.alert("Login Failed", err.message);
-  }
-};
+    try {
+      await loginUser(email, password);
 
+      // 🔥 Get current user
+      const user = await account.get();
+
+      // 🔥 Fetch user profile from DB
+      const response = await databases.listDocuments(
+        APPWRITE_CONFIG.DATABASE_ID,
+        APPWRITE_CONFIG.USER_COLLECTION_ID,
+        [Query.equal("userId", user.$id)],
+      );
+
+      if (response.documents.length === 0) {
+        Alert.alert("Error", "User profile not found");
+        return;
+      }
+
+      const currentUser = response.documents[0];
+
+      // 🔥 Navigate based on role
+      if (currentUser.role === "admin") {
+        router.replace("./admin/(tabs)/dashboard"); // 👈 create this later
+      } else {
+        router.replace("./(tabs)/dashboard");
+      }
+    } catch (err: any) {
+      Alert.alert("Login Failed", err.message);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -101,7 +125,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
     padding: 20,
   },
-
   title: {
     color: "#fff",
     fontSize: 28,
