@@ -26,14 +26,14 @@ export default function TabLayout() {
           shadowOpacity: 0.15,
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 10,
-          borderTopWidth: 0
+          borderTopWidth: 0,
         },
 
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
-          marginBottom: 4
-        }
+          marginBottom: 4,
+        },
       }}
     >
       <Tabs.Screen
@@ -48,7 +48,7 @@ export default function TabLayout() {
                 color={color}
               />
             </View>
-          )
+          ),
         }}
       />
 
@@ -62,7 +62,21 @@ export default function TabLayout() {
               size={size}
               color={color}
             />
-          )
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="invitations"
+        options={{
+          title: "Invitations",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "calendar" : "mail-outline"}
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
 
@@ -76,7 +90,7 @@ export default function TabLayout() {
               size={size}
               color={color}
             />
-          )
+          ),
         }}
       />
     </Tabs>
