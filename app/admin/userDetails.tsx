@@ -12,6 +12,7 @@ import { Calendar } from "react-native-calendars";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { databases } from "../../services/appwrite";
 import { calculateStats } from "../../components/calculateStats";
+import { LinearGradient } from "expo-linear-gradient";
 
 const DATABASE_ID = APPWRITE_CONFIG.DATABASE_ID;
 const ATTENDANCE_COLLECTION_ID = APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID;
@@ -130,16 +131,10 @@ export default function UserDetails() {
       <Text style={styles.email}>{user?.email}</Text>
 
       {/* 💰 Earnings */}
-      <View style={styles.card}>
+      <LinearGradient colors={["#4CAF50", "#2E7D32"]} style={styles.card}>
         <Text style={styles.cardTitle}>Monthly Earnings</Text>
         <Text style={styles.amount}>₹{stats.salary}</Text>
-      </View>
-
-      {/* 📊 Progress */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Work Progress</Text>
-        <Text style={styles.progress}>{progressPercent}%</Text>
-      </View>
+      </LinearGradient>
 
       {/* 📅 Stats */}
       <View style={styles.statsContainer}>
@@ -182,6 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#f6f6f6",
+    marginTop:30,
   },
 
   center: {
@@ -193,6 +189,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "bold",
+    color:"#4CAF50"
   },
 
   email: {
@@ -201,29 +198,21 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 15,
-    elevation: 3,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
   },
 
   cardTitle: {
+    color: "#fff",
     fontSize: 16,
-    color: "gray",
   },
 
   amount: {
-    fontSize: 26,
+    color: "#fff",
+    fontSize: 32,
     fontWeight: "bold",
-    marginTop: 5,
-  },
-
-  progress: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginTop: 5,
-    color: "#4CAF50",
+    marginTop: 6,
   },
 
   statsContainer: {

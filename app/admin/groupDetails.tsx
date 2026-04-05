@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { ID, Models, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
@@ -129,139 +130,191 @@ export default function GroupDetails() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Group Details</Text>
+  <View style={styles.container}>
+    
+    <FlatList
+      data={acceptedUsers}
+      keyExtractor={(item) => item.$id}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={fetchAcceptedUsers} />
+      }
+      ListHeaderComponent={
+        <>
+          {/* 🔥 HEADER */}
+          <Text style={styles.title}>Group Details</Text>
+          <Text style={styles.subtitleTop}>
+            Search and manage your team members
+          </Text>
 
-      {/* 🔍 Search */}
-      <TextInput
-        placeholder="Search users..."
-        value={search}
-        onChangeText={searchUsers}
-        style={styles.input}
-      />
+          {/* 🔍 SEARCH CARD */}
+          <View style={styles.searchCard}>
+            <TextInput
+              placeholder="Search users..."
+              placeholderTextColor="#999"
+              value={search}
+              onChangeText={searchUsers}
+              style={styles.input}
+            />
+          </View>
 
-      {/* 🔍 Search Results */}
-      <FlatList
-        data={users}
-        keyExtractor={(item) => item.$id}
-        renderItem={({ item }) => (
-          <View style={styles.userCard}>
+          {/* 🔍 SEARCH RESULTS */}
+          {users.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Search Results</Text>
+
+              {users.map((item) => (
+                <View key={item.$id} style={styles.userCard}>
+                  <View>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.email}>{item.email}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.inviteBtn}
+                    onPress={() => inviteUser(item.userId)}
+                  >
+                    <Text style={styles.inviteText}>Invite</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* 👥 MEMBERS TITLE */}
+          <Text style={styles.sectionTitle}>Group Members</Text>
+        </>
+      }
+
+      ListEmptyComponent={
+        <Text style={styles.emptyText}>No users in this group</Text>
+      }
+
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() =>
+            router.push({
+              pathname: "/admin/userDetails",
+              params: { userId: item.userId },
+            })
+          }
+        >
+          <View style={styles.memberCard}>
             <View>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.email}>{item.email}</Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.inviteBtn}
-              onPress={() => inviteUser(item.userId)}
-            >
-              <Text style={styles.inviteText}>Invite</Text>
-            </TouchableOpacity>
+            <Text style={styles.arrow}>→</Text>
           </View>
-        )}
-      />
-
-      {/* 🔥 Accepted Users */}
-      <Text style={styles.subtitle}>Group Members</Text>
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" />
-      ) : (
-        <FlatList
-          data={acceptedUsers}
-          keyExtractor={(item) => item.$id}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No users yet</Text>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/admin/userDetails",
-                  params: { userId: item.userId },
-                })
-              }
-            >
-              <View style={styles.card}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.email}>{item.email}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+        </TouchableOpacity>
       )}
-    </View>
-  );
+    />
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f4f6f8",
     padding: 20,
+    marginTop:30,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 15,
+    color:"#4CAF50"
   },
 
-  subtitle: {
+  subtitleTop: {
+    fontSize: 14,
+    color: "#777",
+    marginBottom: 20,
+  },
+
+  sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
+    color:"#4CAF50",
+  },
+
+  searchCard: {
+    backgroundColor: "#fff",
+    padding: 14,
+    borderRadius: 14,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
   },
 
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
+    backgroundColor: "#f1f3f5",
+    padding: 14,
     borderRadius: 10,
-    marginBottom: 15,
-    backgroundColor: "#fff",
+    fontSize: 14,
   },
 
   userCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f1f1f1",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
     marginBottom: 10,
+    elevation: 2,
   },
 
-  card: {
-    padding: 15,
-    backgroundColor: "#e8f5e9",
-    borderRadius: 10,
-    marginBottom: 10,
+  memberCard: {
+    backgroundColor: "#caf4ba",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 3,
   },
 
   name: {
+    fontSize: 17,
     fontWeight: "bold",
   },
 
   email: {
-    color: "gray",
-    fontSize: 12,
+    fontSize: 14,
+    color: "#888",
+    marginTop: 2,
   },
 
   inviteBtn: {
     backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
 
   inviteText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 13,
+  },
+
+  arrow: {
+    fontSize: 20,
+    color: "#164617",
+    fontWeight: "bold",
   },
 
   emptyText: {
     textAlign: "center",
-    color: "gray",
-    marginTop: 10,
+    marginTop: 30,
+    color: "#999",
   },
 });

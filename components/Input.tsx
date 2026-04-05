@@ -1,12 +1,12 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
 import {
-  View,
-  TextInput,
   StyleSheet,
   Text,
-  TouchableOpacity
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 type Props = {
   label?: string;
@@ -16,6 +16,7 @@ type Props = {
   secureTextEntry?: boolean;
   icon?: string;
   error?: string;
+  editable?: boolean;
 };
 
 export default function AppInput({
@@ -25,7 +26,8 @@ export default function AppInput({
   onChangeText,
   secureTextEntry,
   icon,
-  error
+  error,
+  editable = true,
 }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +40,8 @@ export default function AppInput({
         style={[
           styles.inputBox,
           isFocused && styles.focusedBox,
-          error && styles.errorBox
+          !editable && { backgroundColor: "#eee" },
+          error && styles.errorBox,
         ]}
       >
         {icon && (
@@ -51,7 +54,7 @@ export default function AppInput({
         )}
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, !editable && { color: "#999" }]}
           placeholder={placeholder}
           value={value}
           onChangeText={onChangeText}
@@ -59,6 +62,7 @@ export default function AppInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholderTextColor="#999"
+          editable={editable}
         />
 
         {secureTextEntry && (
@@ -79,13 +83,13 @@ export default function AppInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 18
+    marginBottom: 18,
   },
 
   label: {
     marginBottom: 6,
     fontWeight: "600",
-    color: "#333"
+    color: "#333",
   },
 
   inputBox: {
@@ -101,26 +105,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
-    elevation: 2
+    elevation: 2,
   },
 
   focusedBox: {
-    borderColor: "#4CAF50"
+    borderColor: "#4CAF50",
   },
 
   errorBox: {
-    borderColor: "#F44336"
+    borderColor: "#F44336",
   },
 
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#333"
+    color: "#333",
   },
 
   errorText: {
     marginTop: 4,
     color: "#F44336",
-    fontSize: 12
-  }
+    fontSize: 12,
+  },
 });

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { ID, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../../constants/config";
@@ -38,7 +39,7 @@ export default function GroupsScreen() {
       const res = await databases.listDocuments(
         DATABASE_ID,
         GROUP_COLLECTION_ID,
-        [Query.equal("adminId", user.$id)]
+        [Query.equal("adminId", user.$id)],
       );
 
       setGroups(res.documents as unknown as Group[]);
@@ -70,14 +71,13 @@ export default function GroupsScreen() {
         {
           groupName: groupName.trim(),
           adminId: user.$id,
-        }
+        },
       );
 
       Alert.alert("Success", "Group created");
 
       setGroupName("");
       fetchGroups(); // refresh
-
     } catch (err) {
       console.log(err);
       Alert.alert("Error", "Failed to create group");
@@ -86,112 +86,143 @@ export default function GroupsScreen() {
 
   return (
     <View style={styles.container}>
-      
-      <Text style={styles.title}>Groups</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* 🔥 HEADER */}
+        <Text style={styles.title}>Create and manage worker groups</Text>
 
-      {/* 🔥 Create Group Section */}
-      <View style={styles.createBox}>
-        <TextInput
-          placeholder="Enter group name"
-          value={groupName}
-          onChangeText={setGroupName}
-          style={styles.input}
-        />
+        {/* 🔥 CREATE GROUP CARD */}
+        <View style={styles.createCard}>
+          <TextInput
+            placeholder="Enter group name..."
+            placeholderTextColor="#999"
+            value={groupName}
+            onChangeText={setGroupName}
+            style={styles.input}
+          />
 
-        <TouchableOpacity style={styles.btn} onPress={createGroup}>
-          <Text style={styles.btnText}>Create</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.btn} onPress={createGroup}>
+            <Text style={styles.btnText}>+ Create Group</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* 🔄 Loading */}
-      {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" />
-      ) : (
-        <FlatList
-          data={groups}
-          keyExtractor={(item) => item.$id}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No groups created yet</Text>
-          }
-          renderItem={({ item }) => (
+        {/* 🔄 Loading */}
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#4CAF50"
+            style={{ marginTop: 30 }}
+          />
+        ) : groups.length === 0 ? (
+          <Text style={styles.emptyText}>No groups created yet</Text>
+        ) : (
+          groups.map((item) => (
             <TouchableOpacity
+              key={item.$id}
               onPress={() =>
                 router.push({
                   pathname: "/admin/groupDetails",
                   params: { groupId: item.$id },
                 })
               }
+              activeOpacity={0.8}
             >
               <View style={styles.card}>
-                <Text style={styles.groupName}>{item.groupName}</Text>
-                <Text style={styles.subText}>Tap to manage users</Text>
+                <View>
+                  <Text style={styles.groupName}>{item.groupName}</Text>
+                  <Text style={styles.subText}>Tap to manage users</Text>
+                </View>
+
+                <Text style={styles.arrow}>→</Text>
               </View>
             </TouchableOpacity>
-          )}
-        />
-      )}
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f4f6f8",
     padding: 20,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 15,
+    marginBottom: 4,
   },
 
-  createBox: {
+  createCard: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
   },
 
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#f1f3f5",
+    padding: 14,
+    borderRadius: 12,
+    fontSize: 14,
+    marginBottom: 12,
   },
 
   btn: {
     backgroundColor: "#4CAF50",
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
   },
 
   btnText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 15,
   },
 
   card: {
-    padding: 16,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
   },
 
   groupName: {
-    fontWeight: "bold",
     fontSize: 16,
+    fontWeight: "bold",
   },
 
   subText: {
     fontSize: 12,
-    color: "gray",
+    color: "#888",
     marginTop: 4,
+  },
+
+  arrow: {
+    fontSize: 20,
+    color: "#4CAF50",
+    fontWeight: "bold",
   },
 
   emptyText: {
     textAlign: "center",
-    marginTop: 20,
-    color: "gray",
+    marginTop: 30,
+    color: "#999",
+    fontSize: 14,
   },
 });

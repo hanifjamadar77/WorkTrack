@@ -177,11 +177,13 @@ export default function ProfileScreen() {
         />
 
         <AppInput
-          label="Email(Don't Change❌)"
+          label="Email"
           placeholder="Enter email"
           value={email}
           onChangeText={setEmail}
           icon="mail"
+          editable={false}
+
         />
 
         <Text style={styles.section}>Salary Settings</Text>
