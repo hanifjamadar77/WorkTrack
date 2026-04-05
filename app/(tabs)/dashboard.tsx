@@ -1,4 +1,4 @@
-import Ionicons from "@expo/vector-icons/build/Ionicons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import * as Updates from "expo-updates";
@@ -16,114 +16,87 @@ import {
 import { Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { account, databases } from "../../services/appwrite";
+import { calculateStats } from "../../components/calculateStats";
 
 export default function DashboardScreen() {
   const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState({
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState<any>({
     days: 0,
     nights: 0,
     half: 0,
     absent: 0,
     salary: 0,
   });
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      const checkUpdate = async () => {
-        try {
-          const update = await Updates.checkForUpdateAsync();
-
-          if (update.isAvailable) {
-            await Updates.fetchUpdateAsync();
-            Updates.reloadAsync();
-          }
-        } catch (e) {
-          console.log("Update check failed:", e);
-        }
-      };
-
       fetchDashboardData();
       checkUpdate();
-    }, [selectedMonth]),
+    }, [selectedMonth])
   );
+
+  const checkUpdate = async () => {
+    try {
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        Updates.reloadAsync();
+      }
+    } catch (e) {
+      console.log("Update check failed:", e);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
+
       const user = await account.get();
 
+      // 📊 Attendance
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
-        [Query.equal("userId", user.$id)],
+        [Query.equal("userId", user.$id)]
       );
 
-      const attendance = response.documents.filter(
-        (doc: any) => doc.userId === user.$id,
-      );
+      setAttendance(response.documents);
 
-      let days = 0;
-      let nights = 0;
-      let half = 0;
-      let absent = 0;
-
-      attendance
-        .filter((item: any) => {
-          const monthFromDate = parseInt(item.date.split("-")[1]) - 1;
-          return monthFromDate === selectedMonth;
-        })
-        .forEach((item: any) => {
-          if (item.status === "day") days++;
-          if (item.status === "night") nights++;
-          if (item.status === "day_night") {
-            days++;
-            nights++;
-          }
-          if (item.status === "half") half++;
-          if (item.status === "absent") absent++;
-        });
-
-      // Fetch salary settings
+      // 👤 Profile
       const profileRes = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.USER_COLLECTION_ID,
         [Query.equal("userId", user.$id)]
       );
 
-      const profile = profileRes.documents.find(
-        (doc: any) => doc.userId === user.$id,
+      const profileData = profileRes.documents[0];
+      setProfile(profileData);
+      setUserName(profileData?.name || "");
+
+      // 🔥 Calculate stats (REUSABLE FUNCTION)
+      const statsData = calculateStats(
+        response.documents,
+        selectedMonth,
+        profileData
       );
 
-      if (profile) {
-        setUserName(profile.name);
-      }
+      setStats(statsData);
 
-      const daySalary = profile?.daySalary || 0;
-      const nightSalary = profile?.nightSalary || 0;
-      const halfSalary = profile?.halfDaySalary || 0;
-
-      const salary =
-        days * daySalary + nights * nightSalary + half * halfSalary;
-
-      setStats({ days, nights, half, absent, salary });
     } catch (err) {
       console.log(err);
     } finally {
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -134,10 +107,20 @@ export default function DashboardScreen() {
   const totalDaysInMonth = new Date(
     new Date().getFullYear(),
     selectedMonth + 1,
-    0,
+    0
   ).getDate();
 
-  const progressPercent = Math.round((stats.days / totalDaysInMonth) * 100);
+  const progressPercent = Math.round(
+    (stats.days / totalDaysInMonth) * 100
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -148,42 +131,31 @@ export default function DashboardScreen() {
     >
       {/* Header */}
       <View style={styles.headerRow}>
-        <View style={{ flexDirection: "column" }}>
+        <View>
           <Text style={styles.welcome}>Hi {userName} 👋</Text>
           <Text style={styles.subText}>Here is your work summary</Text>
         </View>
+
         <TouchableOpacity
           style={styles.monthBox}
           onPress={() => setShowMonthPicker(true)}
         >
           <Text style={styles.monthText}>
-            {
-              [
-                "Jan",
-                "Feb",
-                "Mar",
-                "Apr",
-                "May",
-                "Jun",
-                "Jul",
-                "Aug",
-                "Sep",
-                "Oct",
-                "Nov",
-                "Dec",
-              ][selectedMonth]
-            }
+            {[
+              "Jan","Feb","Mar","Apr","May","Jun",
+              "Jul","Aug","Sep","Oct","Nov","Dec",
+            ][selectedMonth]}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Gradient Salary Card */}
+      {/* Salary */}
       <LinearGradient colors={["#4CAF50", "#2E7D32"]} style={styles.salaryCard}>
         <Text style={styles.salaryLabel}>Monthly Earnings</Text>
         <Text style={styles.salaryValue}>₹ {stats.salary}</Text>
       </LinearGradient>
 
-      {/* Progress Section */}
+      {/* Progress */}
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressText}>Monthly Work Progress</Text>
@@ -197,7 +169,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Stats Grid */}
+      {/* Stats */}
       <View style={styles.grid}>
         <View style={styles.statCard}>
           <Ionicons name="sunny" size={26} color="#4CAF50" />
@@ -222,35 +194,23 @@ export default function DashboardScreen() {
           <Text style={styles.statNumber}>{stats.absent}</Text>
           <Text style={styles.statLabel}>Absent</Text>
         </View>
-
-        {/* Mark Today Button */}
-        <View style={{ width: "100%", alignItems: "center" }}>
-          <TouchableOpacity
-            style={styles.markButton}
-            onPress={() => router.push("/(tabs)/calendar")}
-          >
-            <Text style={styles.markButtonText}>Mark Attendance</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Month Picker Modal */}
+      {/* Button */}
+      <TouchableOpacity
+        style={styles.markButton}
+        onPress={() => router.push("/(tabs)/calendar")}
+      >
+        <Text style={styles.markButtonText}>Mark Attendance</Text>
+      </TouchableOpacity>
+
+      {/* Month Picker */}
       <Modal visible={showMonthPicker} transparent animationType="slide">
         <View style={styles.modalBg}>
           <View style={styles.monthModal}>
             {[
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
+              "January","February","March","April","May","June",
+              "July","August","September","October","November","December",
             ].map((month, index) => (
               <TouchableOpacity
                 key={index}
@@ -274,42 +234,46 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingBottom: 100,
+    backgroundColor: "#f6f6f6",
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 20,
   },
 
-  monthBox: {
-    flex: 0,
-    height: 60,
-    width: 60,
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    justifyContent: "center",
-  },
-  monthText: {
-    fontWeight: "600",
-    fontSize: 18,
-    color: "#fff",
-    textAlign: "center",
-    textAlignVertical: "center",
-  },
   welcome: {
     fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 5,
   },
 
   subText: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 20,
+  },
+
+  monthBox: {
+    height: 60,
+    width: 60,
+    backgroundColor: "#4CAF50",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+  },
+
+  monthText: {
+    fontWeight: "600",
+    fontSize: 18,
+    color: "#fff",
   },
 
   salaryCard: {
@@ -337,7 +301,6 @@ const styles = StyleSheet.create({
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 8,
   },
 
@@ -396,17 +359,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#666",
   },
+
   markButton: {
     backgroundColor: "#4CAF50",
     padding: 16,
     borderRadius: 12,
-    marginTop: 20,
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
     elevation: 4,
   },
 
@@ -415,6 +375,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+
   modalBg: {
     flex: 1,
     justifyContent: "flex-end",
@@ -431,5 +392,7 @@ const styles = StyleSheet.create({
   monthItem: {
     padding: 15,
     fontSize: 16,
+    borderBottomWidth: 0.5,
+    borderColor: "#ddd",
   },
 });

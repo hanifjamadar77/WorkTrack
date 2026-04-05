@@ -1,13 +1,14 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
 } from "react-native";
 import { ID, Models, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
@@ -16,7 +17,8 @@ import { IUserProfile } from "../../types/user";
 
 const DATABASE_ID = APPWRITE_CONFIG.DATABASE_ID;
 const USER_COLLECTION_ID = APPWRITE_CONFIG.USER_COLLECTION_ID;
-const GROUP_MEMBERS_COLLECTION_ID = APPWRITE_CONFIG.GROUP_MEMBERS_COLLECTION_ID;
+const GROUP_MEMBERS_COLLECTION_ID =
+  APPWRITE_CONFIG.GROUP_MEMBERS_COLLECTION_ID;
 
 type UserDocument = Models.Document & IUserProfile;
 
@@ -25,12 +27,14 @@ export default function GroupDetails() {
 
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<UserDocument[]>([]);
+  const [acceptedUsers, setAcceptedUsers] = useState<UserDocument[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // 🔍 Search Users
   const searchUsers = async (text: string) => {
     setSearch(text);
 
-    if (!text) {
+    if (text.length < 2) {
       setUsers([]);
       return;
     }
@@ -39,7 +43,10 @@ export default function GroupDetails() {
       const res = await databases.listDocuments(
         DATABASE_ID,
         USER_COLLECTION_ID,
-        [Query.equal("role", "user"), Query.search("name", text)],
+        [
+          Query.equal("role", "user"),
+          Query.search("name", text),
+        ]
       );
 
       setUsers(res.documents as unknown as UserDocument[]);
@@ -51,11 +58,13 @@ export default function GroupDetails() {
   // 📩 Send Invite
   const inviteUser = async (userId: string) => {
     try {
-      // 🔥 Check if already invited
       const existing = await databases.listDocuments(
         DATABASE_ID,
         GROUP_MEMBERS_COLLECTION_ID,
-        [Query.equal("groupId", groupId), Query.equal("userId", userId)],
+        [
+          Query.equal("groupId", groupId),
+          Query.equal("userId", userId),
+        ]
       );
 
       if (existing.documents.length > 0) {
@@ -63,7 +72,6 @@ export default function GroupDetails() {
         return;
       }
 
-      // ✅ Send invite
       await databases.createDocument(
         DATABASE_ID,
         GROUP_MEMBERS_COLLECTION_ID,
@@ -72,7 +80,7 @@ export default function GroupDetails() {
           groupId: groupId,
           userId: userId,
           status: "pending",
-        },
+        }
       );
 
       Alert.alert("Invite Sent");
@@ -82,11 +90,49 @@ export default function GroupDetails() {
     }
   };
 
+  // 🔥 Fetch accepted users
+  const fetchAcceptedUsers = async () => {
+    try {
+      setLoading(true);
+
+      const members = await databases.listDocuments(
+        DATABASE_ID,
+        GROUP_MEMBERS_COLLECTION_ID,
+        [
+          Query.equal("groupId", groupId),
+          Query.equal("status", "accepted"),
+        ]
+      );
+
+      const usersData = await Promise.all(
+        members.documents.map(async (m: any) => {
+          const res = await databases.listDocuments(
+            DATABASE_ID,
+            USER_COLLECTION_ID,
+            [Query.equal("userId", m.userId)]
+          );
+
+          return res.documents[0];
+        })
+      );
+
+      setAcceptedUsers(usersData as unknown as UserDocument[]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAcceptedUsers();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Users</Text>
+      <Text style={styles.title}>Group Details</Text>
 
-      {/* 🔍 Search Input */}
+      {/* 🔍 Search */}
       <TextInput
         placeholder="Search users..."
         value={search}
@@ -94,7 +140,7 @@ export default function GroupDetails() {
         style={styles.input}
       />
 
-      {/* 👥 User List */}
+      {/* 🔍 Search Results */}
       <FlatList
         data={users}
         keyExtractor={(item) => item.$id}
@@ -114,6 +160,36 @@ export default function GroupDetails() {
           </View>
         )}
       />
+
+      {/* 🔥 Accepted Users */}
+      <Text style={styles.subtitle}>Group Members</Text>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#4CAF50" />
+      ) : (
+        <FlatList
+          data={acceptedUsers}
+          keyExtractor={(item) => item.$id}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No users yet</Text>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/admin/userDetails",
+                  params: { userId: item.userId },
+                })
+              }
+            >
+              <View style={styles.card}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.email}>{item.email}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -125,9 +201,16 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 15,
+  },
+
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 10,
   },
 
   input: {
@@ -136,6 +219,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     marginBottom: 15,
+    backgroundColor: "#fff",
   },
 
   userCard: {
@@ -144,6 +228,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f1f1f1",
     padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  card: {
+    padding: 15,
+    backgroundColor: "#e8f5e9",
     borderRadius: 10,
     marginBottom: 10,
   },
@@ -166,5 +257,11 @@ const styles = StyleSheet.create({
   inviteText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: "gray",
+    marginTop: 10,
   },
 });
