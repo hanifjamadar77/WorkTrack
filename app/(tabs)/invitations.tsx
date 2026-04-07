@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
@@ -40,7 +41,30 @@ export default function InvitationsScreen() {
         [Query.equal("userId", user.$id), Query.equal("status", "pending")],
       );
 
-      setInvites(res.documents as unknown as GroupMemberDocument[]);
+      // 🔥 Fetch group names
+      const invitesWithNames = await Promise.all(
+        res.documents.map(async (item: any) => {
+          try {
+            const groupRes = await databases.getDocument(
+              DATABASE_ID,
+              GROUP_COLLECTION_ID,
+              item.groupId,
+            );
+
+            return {
+              ...item,
+              groupName: groupRes.groupName,
+            };
+          } catch {
+            return {
+              ...item,
+              groupName: "Unknown Group",
+            };
+          }
+        }),
+      );
+
+      setInvites(invitesWithNames);
     } catch (err) {
       console.log(err);
     } finally {
@@ -91,21 +115,34 @@ export default function InvitationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Invitations</Text>
+      <Text style={styles.subtitle}>Join groups assigned by admins</Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator
+          size="large"
+          color="#4CAF50"
+          style={{ marginTop: 30 }}
+        />
       ) : (
         <FlatList
           data={invites}
           keyExtractor={(item) => item.$id}
+          refreshControl={
+                  <RefreshControl refreshing={loading} onRefresh={fetchInvites} />
+          }
           ListEmptyComponent={
             <Text style={styles.emptyText}>No pending invites</Text>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }: any) => (
             <View style={styles.card}>
-              <Text style={styles.groupText}>Group ID: {item.groupId}</Text>
+              {/* 🏷 Group Name */}
+              <Text style={styles.groupName}>👥 {item.groupName}</Text>
 
+              <Text style={styles.desc}>
+                You’ve been invited to join this group
+              </Text>
+
+              {/* 🔘 Buttons */}
               <View style={styles.btnRow}>
                 <TouchableOpacity
                   style={styles.acceptBtn}
@@ -133,24 +170,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: "#f4f6f8",
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 15,
+  },
+
+  subtitle: {
+    fontSize: 18,
+    color: "#413d3d",
+    marginBottom: 20,
   },
 
   card: {
-    backgroundColor: "#f1f1f1",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
 
-  groupText: {
+  groupName: {
+    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 10,
+  },
+
+  desc: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 4,
+    marginBottom: 12,
   },
 
   btnRow: {
@@ -160,19 +215,19 @@ const styles = StyleSheet.create({
 
   acceptBtn: {
     backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
     flex: 1,
-    marginRight: 5,
+    marginRight: 6,
     alignItems: "center",
   },
 
   rejectBtn: {
-    backgroundColor: "#f44336",
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: "#F44336",
+    paddingVertical: 10,
+    borderRadius: 10,
     flex: 1,
-    marginLeft: 5,
+    marginLeft: 6,
     alignItems: "center",
   },
 
@@ -183,7 +238,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     textAlign: "center",
-    marginTop: 20,
-    color: "gray",
+    marginTop: 40,
+    color: "#999",
   },
 });
