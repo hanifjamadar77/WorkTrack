@@ -41,9 +41,12 @@ export default function InvitationsScreen() {
         [Query.equal("userId", user.$id), Query.equal("status", "pending")],
       );
 
-      // 🔥 Fetch group names
-      const invitesWithNames = await Promise.all(
+      const invitesWithDetails = await Promise.all(
         res.documents.map(async (item: any) => {
+          let groupName = "Unknown Group";
+          let adminName = "Admin";
+
+          // ✅ Fetch group safely
           try {
             const groupRes = await databases.getDocument(
               DATABASE_ID,
@@ -51,20 +54,33 @@ export default function InvitationsScreen() {
               item.groupId,
             );
 
-            return {
-              ...item,
-              groupName: groupRes.groupName,
-            };
-          } catch {
-            return {
-              ...item,
-              groupName: "Unknown Group",
-            };
+            groupName = groupRes.groupName;
+
+            // ✅ Fetch admin from userProfile
+            try {
+              const adminRes = await databases.listDocuments(
+                DATABASE_ID,
+                APPWRITE_CONFIG.USER_COLLECTION_ID,
+                [Query.equal("userId", groupRes.adminId)],
+              );
+
+              adminName = adminRes.documents[0]?.name || "Admin";
+            } catch (err) {
+              console.log("Admin fetch error:", err);
+            }
+          } catch (err) {
+            console.log("Group fetch error:", err);
           }
+
+          return {
+            ...item,
+            groupName,
+            adminName,
+          };
         }),
       );
 
-      setInvites(invitesWithNames);
+      setInvites(invitesWithDetails);
     } catch (err) {
       console.log(err);
     } finally {
@@ -128,7 +144,7 @@ export default function InvitationsScreen() {
           data={invites}
           keyExtractor={(item) => item.$id}
           refreshControl={
-                  <RefreshControl refreshing={loading} onRefresh={fetchInvites} />
+            <RefreshControl refreshing={loading} onRefresh={fetchInvites} />
           }
           ListEmptyComponent={
             <Text style={styles.emptyText}>No pending invites</Text>
@@ -137,6 +153,9 @@ export default function InvitationsScreen() {
             <View style={styles.card}>
               {/* 🏷 Group Name */}
               <Text style={styles.groupName}>👥 {item.groupName}</Text>
+
+              {/* 👤 Admin */}
+              <Text style={styles.adminText}>Invited by: {item.adminName}</Text>
 
               <Text style={styles.desc}>
                 You’ve been invited to join this group
@@ -200,7 +219,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-
+  adminText: {
+    fontSize: 14,
+    color: "#015924",
+    marginTop: 4,
+  },
   desc: {
     fontSize: 12,
     color: "#777",

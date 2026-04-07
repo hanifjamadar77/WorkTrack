@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
-    color:"#4CAF50"
+    color:"#065602"
   },
 
   subtitleTop: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
-    color:"#4CAF50",
+    color:"#065602",
   },
 
   searchCard: {

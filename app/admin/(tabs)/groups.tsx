@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#e8f9d3",
     padding: 18,
     borderRadius: 16,
     marginBottom: 12,
@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
   groupName: {
     fontSize: 16,
     fontWeight: "bold",
+    color:"#065602"
   },
 
   subText: {

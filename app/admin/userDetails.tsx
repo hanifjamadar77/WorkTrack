@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    color:"#4CAF50"
+    color:"#014904"
   },
 
   email: {
