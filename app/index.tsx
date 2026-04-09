@@ -71,7 +71,7 @@ export default function LoginScreen() {
       >
         {/* Top Image */}
         <ImageBackground
-          source={require("../assets/images/thomas-shelby.jpg")}
+          source={require("../assets/images/bg.jpg")}
           style={styles.topImage}
           resizeMode="cover"
         >

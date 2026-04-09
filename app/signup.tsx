@@ -64,7 +64,7 @@ export default function SignupScreen() {
       >
         {/* Top Image */}
         <ImageBackground
-          source={require("../assets/images/thomas-shelby.jpg")}
+          source={require("../assets/images/bg.jpg")}
           style={styles.topImage}
           resizeMode="cover"
         >

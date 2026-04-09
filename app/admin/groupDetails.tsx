@@ -1,14 +1,13 @@
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
-  FlatList,
+  Alert, BackHandler, FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { ID, Models, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../constants/config";
@@ -33,6 +32,22 @@ export default function GroupDetails() {
   const [users, setUsers] = useState<UserDocument[]>([]);
   const [acceptedUsers, setAcceptedUsers] = useState<GroupMemberWithUser[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.push("/admin/(tabs)/teams"); // 👈 your groups screen path
+        return true; // prevent default behavior
+      };
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
+
+      return () => subscription.remove();
+    }, []),
+  );
 
   // 🔍 Search Users
   const searchUsers = async (text: string) => {
