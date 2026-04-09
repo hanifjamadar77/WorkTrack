@@ -4,6 +4,7 @@ import { Text, View } from "react-native";
 import { Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../constants/config";
 import { account, databases } from "../services/appwrite";
+import { pingServer } from "@/services/pingService";
 
 export default function Layout() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function Layout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+   
     const checkAuth = async () => {
       try {
         const user = await account.get();
@@ -50,6 +52,7 @@ export default function Layout() {
     };
 
     checkAuth();
+    pingServer(); // solve the problem of appwrite 7 days pausing problem
   }, []);
 
   if (loading) {
