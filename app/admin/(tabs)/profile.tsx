@@ -185,6 +185,32 @@ export default function ProfileScreen() {
           editable={false}
         />
 
+        <Text style={styles.section}>Salary Settings</Text>
+
+        <AppInput
+          label="Day Salary"
+          placeholder="Enter amount"
+          value={daySalary}
+          onChangeText={setDaySalary}
+          icon="cash"
+        />
+
+        <AppInput
+          label="Night Salary"
+          placeholder="Enter night salary"
+          value={nightSalary}
+          onChangeText={setNightSalary}
+          icon="moon"
+        />
+
+        <AppInput
+          label="Half Day Salary"
+          placeholder="Enter half day salary"
+          value={halfSalary}
+          onChangeText={setHalfSalary}
+          icon="time"
+        />
+
         <TouchableOpacity style={styles.button} onPress={updateProfile}>
           <Text style={styles.buttonText}>Save Changes</Text>
         </TouchableOpacity>

@@ -39,7 +39,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: "Dashboard",
+          title: "Admin Dashboard",
           tabBarIcon: ({ color, size, focused }) => (
             <View style={{ alignItems: "center" }}>
               <Ionicons
@@ -53,7 +53,23 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="groups"
+        name="calendar"
+        options={{
+          title: "Calendar",
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={{ alignItems: "center" }}>
+              <Ionicons
+                name={focused ? "calendar" : "calendar-outline"}
+                size={size}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="teams"
         options={{
           title: "Teams",
           tabBarIcon: ({ color, size, focused }) => (

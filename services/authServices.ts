@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { ID, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../constants/config";
 import { account, databases } from "./appwrite";
@@ -6,7 +7,7 @@ export const signupUser = async (
   email: string,
   password: string,
   name: string,
-  role: string
+  role: string,
 ) => {
   try {
     // 1️⃣ Create authentication user
@@ -70,14 +71,14 @@ export const getCurrentUser = async () => {
     const currentUser = await databases.listDocuments(
       APPWRITE_CONFIG.DATABASE_ID,
       APPWRITE_CONFIG.USER_COLLECTION_ID,
-      [Query.equal("accountId", [currentAccount.$id])]
+      [Query.equal("accountId", [currentAccount.$id])],
     );
 
     if (!currentUser || currentUser.total === 0)
       throw new Error("User not found");
 
     return currentUser.documents[0];
-  } catch (e : any) {
+  } catch (e: any) {
     console.error("❌ getCurrentUser error:", e);
     throw new Error(e?.message || "Failed to fetch user");
   }
@@ -88,5 +89,57 @@ export const logoutUser = async () => {
     await account.deleteSession("current");
   } catch (error) {
     console.log("Logout error:", error);
+  }
+};
+
+export const deleteGroup = async (groupId: string) => {
+  try {
+    if (!groupId) {
+      throw new Error("Invalid groupId");
+    }
+
+    // 1. Get members
+    const members = await databases.listDocuments(
+      APPWRITE_CONFIG.DATABASE_ID,
+      APPWRITE_CONFIG.GROUP_MEMBERS_COLLECTION_ID,
+      [Query.equal("groupId", groupId)],
+    );
+
+    // 2. Delete members
+    await Promise.all(
+      members.documents.map((member: any) =>
+        databases.deleteDocument(
+          APPWRITE_CONFIG.DATABASE_ID,
+          APPWRITE_CONFIG.GROUP_MEMBERS_COLLECTION_ID,
+          member.$id,
+        ),
+      ),
+    );
+
+    // 3. Delete group
+    await databases.deleteDocument(
+      APPWRITE_CONFIG.DATABASE_ID,
+      APPWRITE_CONFIG.GROUP_COLLECTION_ID,
+      groupId,
+    );
+  } catch (error) {
+    console.error("Delete group error:", error);
+    throw error; // optional
+  }
+};
+
+export const handleRemoveMember = async (memberId: string) => {
+  try {
+    await databases.deleteDocument(
+      APPWRITE_CONFIG.DATABASE_ID,
+      APPWRITE_CONFIG.GROUP_MEMBERS_COLLECTION_ID,
+      memberId,
+    );
+
+    Alert.alert("Success", "Member removed");
+  } catch (error) {
+    console.error(error);
+    Alert.alert("Error", "Failed to remove member");
+    throw error;
   }
 };

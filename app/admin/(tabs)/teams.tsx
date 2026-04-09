@@ -9,10 +9,12 @@ import {
   View,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { ID, Query } from "react-native-appwrite";
 import { APPWRITE_CONFIG } from "../../../constants/config";
 import { account, databases } from "../../../services/appwrite";
+import {deleteGroup} from "../../../services/authServices";
 import { router } from "expo-router";
 
 const DATABASE_ID = APPWRITE_CONFIG.DATABASE_ID;
@@ -84,9 +86,30 @@ export default function GroupsScreen() {
     }
   };
 
+  const handleLongPress = (group: any) => {
+  Alert.alert(
+    "Group Options",
+    `Manage "${group.groupName}"`,
+    [
+      {
+        text: "Delete Group",
+        style: "destructive",
+        onPress: () => deleteGroup(group.$id),
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]
+  );
+};
+
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}
+      refreshControl={
+                <RefreshControl refreshing={loading} onRefresh={fetchGroups} />
+              }>
         {/* 🔥 HEADER */}
         <Text style={styles.title}>Create and manage worker groups</Text>
 
@@ -124,6 +147,8 @@ export default function GroupsScreen() {
                   params: { groupId: item.$id },
                 })
               }
+              onLongPress={() => handleLongPress(item)}
+              delayLongPress={300}
               activeOpacity={0.8}
             >
               <View style={styles.card}>
@@ -205,7 +230,7 @@ const styles = StyleSheet.create({
   groupName: {
     fontSize: 16,
     fontWeight: "bold",
-    color:"#065602"
+    color: "#065602",
   },
 
   subText: {
