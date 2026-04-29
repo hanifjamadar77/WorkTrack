@@ -66,6 +66,13 @@ salary =
 ## 📸 Screenshots
 <img width="250" src="https://github.com/user-attachments/assets/b791cf3a-aafa-4c9d-b025-a179d62de32d" /> <img width="250" src="https://github.com/user-attachments/assets/49c39b03-cf37-45f7-92e7-9a9ada200dea" />  <img width="250" src="https://github.com/user-attachments/assets/81c9b7a1-2705-422c-9bf1-b647dd50a0b6" />
 
+## 📱 APK Download
+
+You can download and test the Android application using the link below:
+
+👉 [Download APK](https://github.com/hanifjamadar77/WorkTrack/releases)
+
+> Note: Enable "Install from Unknown Sources" on your Android device.
 
 
 
