@@ -1,53 +1,71 @@
-# 📱 WorkTrack – Worker Attendance & Salary Tracker
+# 📱 WorkTrack – Worker Attendance & Group Management App
 
-WorkTrack is a mobile application built using React Native and Appwrite that helps daily workers track their attendance, work shifts, and calculate salary automatically based on their work records.
-This app is designed especially for electricians, labor workers, and field professionals who need a simple daily work tracking system.
+WorkTrack is a **React Native (Expo)** based mobile application designed to manage worker attendance, earnings, and group-based workforce tracking with an admin dashboard.
 
 ---
 
 ## 🚀 Features
 
-- 📅 Calendar-based attendance tracking
-- 🟢 Mark Day / Night / Half Day / Absent
-- 📝 Add notes for each working day
-- 📊 Dashboard with monthly statistics
-- 💰 Automatic salary calculation
-- 👤 User profile with salary configuration
-- 🔐 Secure authentication using Appwrite
-- ☁️ Cloud database storage
-- 📱 Android mobile app (APK supported)
+### 👤 Worker (User)
+
+* 🔐 Authentication (Login / Signup)
+* 📊 Dashboard with:
+
+  * Monthly earnings
+  * Work progress
+  * Attendance stats
+* 📅 Calendar view with color-coded attendance
+* 📝 Daily attendance marking:
+
+  * Day / Night / Half / Absent / Day+Night
+* 📩 Receive and manage group invitations
 
 ---
 
-## 🛠 Tech Stack
+### 👨‍💼 Admin
 
-### Frontend
-- React Native (Expo)
-- TypeScript
-- Expo Router
-- React Native Calendars
-- Ionicons
-
-### Backend
-- Appwrite Authentication
-- Appwrite Database
-- Appwrite Storage
+* 🔐 Role-based access control
+* 👥 Create and manage groups
+* 📩 Send invitations to workers
+* 📊 View worker performance (read-only)
+* 📅 Track attendance and earnings of each worker
+* ❌ Delete groups and remove members
 
 ---
 
-## 📷 Screenshots
+## 🧠 Core Logic
+* Filters attendance by month
+* Counts:
 
-| Dashboard | Calendar | Profile |
-|----------|---------|---------|
-|<img src="https://github.com/user-attachments/assets/82467ef7-a08c-43e0-8eec-544af65df86b" width="250"/>| <img src="https://github.com/user-attachments/assets/2e51ca7a-8438-4390-9da0-f2509c5d9581" width="250"/>|<img src="https://github.com/user-attachments/assets/deadcfa7-9e89-470e-8643-cc77c18effac" width="250"/>
+  * Days
+  * Nights
+  * Half days
+  * Absents
+* Handles special case:
 
-## 📱 APK Download
+  * `day_night` → counts as both day and night
+* Calculates salary:
 
-You can download and test the Android application using the link below:
+```
+salary =
+(days × daySalary) +
+(nights × nightSalary) +
+(half × halfDaySalary)
+```
 
-👉 [Download APK](https://github.com/hanifjamadar77/WorkTrack/releases)
+---
+## 🛠️ Tech Stack
 
-> Note: Enable "Install from Unknown Sources" on your Android device.
+* ⚛️ React Native (Expo)
+* 🟦 TypeScript
+* 🧭 Expo Router
+* ☁️ Appwrite (Auth + Database)
 
-⭐ Star this repo if you find it helpful!
+---
+
+## 📸 Screenshots
+<img width="250" src="https://github.com/user-attachments/assets/b791cf3a-aafa-4c9d-b025-a179d62de32d" /> <img width="250" src="https://github.com/user-attachments/assets/49c39b03-cf37-45f7-92e7-9a9ada200dea" />  <img width="250" src="https://github.com/user-attachments/assets/81c9b7a1-2705-422c-9bf1-b647dd50a0b6" />
+
+
+
 
