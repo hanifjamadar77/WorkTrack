@@ -60,7 +60,9 @@ export default function CalendarScreen() {
           if (item.status === "day") color = "green";
           if (item.status === "night") color = "gray";
           if (item.status === "day_night") color = "purple";
+          // half is yellow, half_night is orange
           if (item.status === "half") color = "yellow";
+          if (item.status === "half_night") color = "orange";
           if (item.status === "absent") color = "red";
 
           marks[item.date] = {
@@ -212,11 +214,18 @@ export default function CalendarScreen() {
       />
 
       <View style={styles.legend}>
-        <Text>🟢 Day</Text>
-        <Text>⚫ Night</Text>
-        <Text>🟣 Day-Night</Text>
-        <Text>🟡 Half</Text>
-        <Text>🔴 Absent</Text>
+        {[
+          { emoji: "🟢", label: "Day" },
+          { emoji: "⚫", label: "Night" },
+          { emoji: "🟣", label: "Day-Night" },
+          { emoji: "🟡", label: "Half" },
+          { emoji: "🔴", label: "Absent" },
+          { emoji: "🟠", label: "Half-Day-Night" },
+        ].map((it) => (
+          <View key={it.label} style={styles.legendItem}>
+            <Text>{it.emoji} {it.label}</Text>
+          </View>
+        ))}
       </View>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -229,7 +238,8 @@ export default function CalendarScreen() {
                 { label: "Day", value: "day", color: "green" },
                 { label: "Night", value: "night", color: "gray" },
                 { label: "Day-Night", value: "day_night", color: "purple" },
-                { label: "Half", value: "half", color: "orange" },
+                { label: "Half-Day-Night", value: "half_night", color: "orange" },
+                { label: "Half", value: "half", color: "yellow" },
                 { label: "Absent", value: "absent", color: "red" },
               ].map((item) => (
                 <TouchableOpacity
@@ -349,9 +359,16 @@ const styles = StyleSheet.create({
 
   legend: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginTop: 16,
     fontSize: 14,
+  },
+
+  legendItem: {
+    width: "33%",
+    alignItems: "center",
+    marginBottom: 8,
   },
 
   statusRow: {

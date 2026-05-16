@@ -14,14 +14,34 @@ export const calculateStats = (
   });
 
   monthlyAttendance.forEach((item: any) => {
-    if (item.status === "day") days++;
-    if (item.status === "night") nights++;
+
+    if (item.status === "day") {
+      days++;
+    }
+
+    if (item.status === "night") {
+      nights++;
+    }
+
+    // 🔥 Day + Night
     if (item.status === "day_night") {
       days++;
       nights++;
     }
-    if (item.status === "half") half++;
-    if (item.status === "absent") absent++;
+
+    // 🔥 Half + Night
+    if (item.status === "half_night") {
+      half++;
+      nights++;
+    }
+
+    if (item.status === "half") {
+      half++;
+    }
+
+    if (item.status === "absent") {
+      absent++;
+    }
   });
 
   const daySalary = user?.daySalary || 0;
