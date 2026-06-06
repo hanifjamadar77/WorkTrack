@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Query } from "react-native-appwrite";
 import {
   Alert,
+  DeviceEventEmitter,
   Modal,
   RefreshControl,
   ScrollView,
@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ID } from "react-native-appwrite";
+import { ID, Query } from "react-native-appwrite";
 import { Calendar } from "react-native-calendars";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { account, databases } from "../../services/appwrite";
@@ -40,38 +40,88 @@ export default function CalendarScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
-        [Query.equal("userId", user.$id)],
+        [
+          Query.equal("userId", user.$id),
+          Query.limit(100),
+          Query.orderDesc("$createdAt"),
+        ],
       );
+
+      console.log("loadAttendance: docs returned", response.documents.length);
 
       const userAttendance = response.documents.filter(
         (doc: any) => doc.userId === user.$id,
       );
 
+      console.log(
+        "loadAttendance: filtered userAttendance",
+        userAttendance.length,
+      );
       const marks: any = {};
 
-      userAttendance
-        .filter((item: any) => {
-          const monthFromDate = parseInt(item.date.split("-")[1]) - 1;
-          return monthFromDate === selectedMonth;
-        })
-        .forEach((item: any) => {
-          let color = "";
+      const getMonthFrom = (dateStr: any) => {
+        if (!dateStr) return -1;
+        // try Date parsing first
+        try {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) return d.getMonth();
+        } catch (e) {}
+        try {
+          const parts = (dateStr + "").split("-");
+          if (parts.length >= 2) return parseInt(parts[1]) - 1;
+        } catch (e) {}
+        return -1;
+      };
 
-          if (item.status === "day") color = "green";
-          if (item.status === "night") color = "gray";
-          if (item.status === "day_night") color = "purple";
-          // half is yellow, half_night is orange
-          if (item.status === "half") color = "yellow";
-          if (item.status === "half_night") color = "orange";
-          if (item.status === "absent") color = "red";
+      console.log(
+        "loadAttendance: sample userAttendance dates",
+        userAttendance.slice(0, 8).map((i: any) => ({
+          date: i.date,
+          type: typeof i.date,
+          monthParsed: getMonthFrom(i.date),
+        })),
+      );
 
-          marks[item.date] = {
+      // Build marks from all attendance docs (avoid month-filter mismatch)
+      userAttendance.forEach((item: any) => {
+        const itemDate = item.date;
+        const monthFromDate = getMonthFrom(item.date);
+        console.log(
+          "loadAttendance: marking",
+          item.date,
+          item.status,
+          "monthFromDate",
+          monthFromDate,
+        );
+        let color = "";
+
+        if (item.status === "day") color = "green";
+        if (item.status === "night") color = "gray";
+        if (item.status === "day_night") color = "purple";
+        // half is yellow, half_night is orange
+        if (item.status === "half") color = "yellow";
+        if (item.status === "half_night") color = "orange";
+        if (item.status === "absent") color = "red";
+
+        if (itemDate) {
+          marks[itemDate] = {
             selected: true,
             selectedColor: color,
           };
-        });
+        }
+      });
 
-      setMarkedDates({ ...marks });
+      console.log(
+        "loadAttendance: marks built count",
+        Object.keys(marks).length,
+      );
+      console.log(
+        "loadAttendance: sample marks",
+        Object.keys(marks).slice(0, 5),
+      );
+
+      // Merge backend marks with any optimistic local marks
+      setMarkedDates((prev: any) => ({ ...prev, ...marks }));
     } catch (err) {
       console.log(err);
     }
@@ -159,6 +209,56 @@ export default function CalendarScreen() {
       setStatus("");
       setNote("");
 
+      // update calendar immediately so UI reflects change even if backend is slow
+      const getColor = (s: string) => {
+        if (s === "day") return "green";
+        if (s === "night") return "gray";
+        if (s === "day_night") return "purple";
+        if (s === "half") return "yellow";
+        if (s === "half_night") return "orange";
+        if (s === "absent") return "red";
+        return "#4CAF50";
+      };
+
+      setMarkedDates((prev: any) => ({
+        ...prev,
+        [selectedDate]: { selected: true, selectedColor: getColor(status) },
+      }));
+
+      // notify other screens (dashboard) to refresh and provide optimistic payload
+      try {
+        DeviceEventEmitter.emit("attendanceUpdated", {
+          userId: user.$id,
+          date: selectedDate,
+          status,
+          note,
+        });
+      } catch (e) {
+        // ignore
+      }
+
+      // confirm record exists on backend for this date
+      try {
+        const verify = await databases.listDocuments(
+          APPWRITE_CONFIG.DATABASE_ID,
+          APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
+          [
+            Query.equal("userId", user.$id),
+            Query.equal("date", selectedDate),
+            Query.limit(1),
+          ],
+        );
+        console.log(
+          "saveAttendance: verify backend doc count",
+          verify.documents.length,
+          selectedDate,
+          verify.documents[0],
+        );
+      } catch (e) {
+        console.log("saveAttendance: verify failed", e);
+      }
+
+      // also try to reload from backend
       loadAttendance(); // refresh calendar
     } catch (err) {
       Alert.alert("Error", "Failed to save attendance");
@@ -223,7 +323,9 @@ export default function CalendarScreen() {
           { emoji: "🟠", label: "Half-Day-Night" },
         ].map((it) => (
           <View key={it.label} style={styles.legendItem}>
-            <Text>{it.emoji} {it.label}</Text>
+            <Text>
+              {it.emoji} {it.label}
+            </Text>
           </View>
         ))}
       </View>
@@ -238,7 +340,11 @@ export default function CalendarScreen() {
                 { label: "Day", value: "day", color: "green" },
                 { label: "Night", value: "night", color: "gray" },
                 { label: "Day-Night", value: "day_night", color: "purple" },
-                { label: "Half-Day-Night", value: "half_night", color: "orange" },
+                {
+                  label: "Half-Day-Night",
+                  value: "half_night",
+                  color: "orange",
+                },
                 { label: "Half", value: "half", color: "yellow" },
                 { label: "Absent", value: "absent", color: "red" },
               ].map((item) => (

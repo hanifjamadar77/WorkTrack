@@ -1,7 +1,7 @@
 export const calculateStats = (
   attendance: any[],
   selectedMonth: number,
-  user: any
+  user: any,
 ) => {
   let days = 0;
   let nights = 0;
@@ -9,12 +9,56 @@ export const calculateStats = (
   let absent = 0;
 
   const monthlyAttendance = attendance.filter((item: any) => {
-    const monthFromDate = parseInt(item.date.split("-")[1]) - 1;
+    const getMonthFrom = (dateStr: any) => {
+      if (!dateStr) return -1;
+      try {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) return d.getMonth();
+      } catch (e) {}
+      try {
+        const parts = (dateStr + "").split("-");
+        if (parts.length >= 2) return parseInt(parts[1]) - 1;
+      } catch (e) {}
+      return -1;
+    };
+
+    const monthFromDate = getMonthFrom(item.date);
     return monthFromDate === selectedMonth;
   });
 
-  monthlyAttendance.forEach((item: any) => {
+  try {
+    console.log(
+      "calculateStats: attendance length",
+      attendance.length,
+      "selectedMonth",
+      selectedMonth,
+    );
+    console.log(
+      "calculateStats: sample dates",
+      attendance.slice(0, 6).map((i: any) => ({
+        date: i.date,
+        parsed: (() => {
+          try {
+            const d = new Date(i.date);
+            if (!isNaN(d.getTime())) return d.getMonth();
+          } catch (e) {}
+          try {
+            const parts = (i.date + "").split("-");
+            if (parts.length >= 2) return parseInt(parts[1]) - 1;
+          } catch (e) {}
+          return -1;
+        })(),
+      })),
+    );
+    console.log(
+      "calculateStats: monthlyAttendance length",
+      monthlyAttendance.length,
+    );
+  } catch (e) {
+    // ignore logging errors
+  }
 
+  monthlyAttendance.forEach((item: any) => {
     if (item.status === "day") {
       days++;
     }
@@ -48,10 +92,7 @@ export const calculateStats = (
   const nightSalary = user?.nightSalary || 0;
   const halfSalary = user?.halfDaySalary || 0;
 
-  const salary =
-    days * daySalary +
-    nights * nightSalary +
-    half * halfSalary;
+  const salary = days * daySalary + nights * nightSalary + half * halfSalary;
 
   return {
     days,

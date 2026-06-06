@@ -5,6 +5,7 @@ import * as Updates from "expo-updates";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   Modal,
   RefreshControl,
   ScrollView,
@@ -14,9 +15,9 @@ import {
   View,
 } from "react-native";
 import { Query } from "react-native-appwrite";
+import { calculateStats } from "../../components/calculateStats";
 import { APPWRITE_CONFIG } from "../../constants/config";
 import { account, databases } from "../../services/appwrite";
-import { calculateStats } from "../../components/calculateStats";
 
 export default function DashboardScreen() {
   const [userName, setUserName] = useState("");
@@ -39,10 +40,68 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      console.log("Dashboard: screen focused, fetching dashboard data");
       fetchDashboardData();
       checkUpdate();
-    }, [selectedMonth])
+    }, [selectedMonth]),
   );
+
+  React.useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(
+      "attendanceUpdated",
+      (payload: any) => {
+        console.log("attendanceUpdated event received", payload);
+
+        try {
+          if (payload && payload.date && payload.userId) {
+            console.log(
+              "attendanceUpdated: merging optimistic doc",
+              payload.date,
+              payload.status,
+            );
+            setAttendance((prev) => {
+              const others = prev.filter(
+                (d) =>
+                  !(d.date === payload.date && d.userId === payload.userId),
+              );
+              const newDoc = {
+                userId: payload.userId,
+                date: payload.date,
+                status: payload.status,
+                note: payload.note,
+              } as any;
+              const updated = [newDoc, ...others];
+
+              // recalc stats optimistically
+              try {
+                const statsData = calculateStats(
+                  updated,
+                  selectedMonth,
+                  profile,
+                );
+                console.log("attendanceUpdated: optimistic stats", statsData);
+                setStats(statsData);
+              } catch (e) {
+                console.log("attendanceUpdated: recalc failed", e);
+              }
+
+              return updated;
+            });
+          }
+        } catch (e) {
+          console.log("attendanceUpdated handler error", e);
+        }
+
+        // still fetch from backend to reconcile
+        console.log(
+          "attendanceUpdated: calling fetchDashboardData to reconcile",
+        );
+        fetchDashboardData();
+      },
+    );
+
+    return () => sub.remove();
+  }, [selectedMonth, profile]);
 
   const checkUpdate = async () => {
     try {
@@ -58,6 +117,7 @@ export default function DashboardScreen() {
 
   const fetchDashboardData = async () => {
     try {
+      console.log("fetchDashboardData: start selectedMonth", selectedMonth);
       setLoading(true);
 
       const user = await account.get();
@@ -66,8 +126,51 @@ export default function DashboardScreen() {
       const response = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.ATTENDANCE_COLLECTION_ID,
-        [Query.equal("userId", user.$id)]
+        [
+          Query.equal("userId", user.$id),
+          Query.limit(100),
+          Query.orderDesc("$createdAt"),
+        ],
       );
+
+      console.log(
+        "fetchDashboardData: attendance docs returned",
+        response.documents.length,
+      );
+
+      try {
+        const getMonthFrom = (dateStr: any) => {
+          if (!dateStr) return -1;
+          try {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) return d.getMonth();
+          } catch (e) {}
+          try {
+            const parts = (dateStr + "").split("-");
+            if (parts.length >= 2) return parseInt(parts[1]) - 1;
+          } catch (e) {}
+          return -1;
+        };
+
+        const datesInfo = response.documents.map((d: any) => ({
+          date: d.date,
+          parsed: getMonthFrom(d.date),
+        }));
+        console.log(
+          "fetchDashboardData: all dates parsed",
+          JSON.stringify(datesInfo, null, 2),
+        );
+        const matching = datesInfo.filter(
+          (i: any) => i.parsed === selectedMonth,
+        );
+        console.log(
+          "fetchDashboardData: docs matching selectedMonth",
+          matching.length,
+          matching.map((m: any) => m.date),
+        );
+      } catch (e) {
+        console.log("fetchDashboardData: parse error", e);
+      }
 
       setAttendance(response.documents);
 
@@ -75,10 +178,15 @@ export default function DashboardScreen() {
       const profileRes = await databases.listDocuments(
         APPWRITE_CONFIG.DATABASE_ID,
         APPWRITE_CONFIG.USER_COLLECTION_ID,
-        [Query.equal("userId", user.$id)]
+        [Query.equal("userId", user.$id)],
       );
 
       const profileData = profileRes.documents[0];
+      console.log(
+        "fetchDashboardData: profileData",
+        !!profileData,
+        profileData?.name,
+      );
       setProfile(profileData);
       setUserName(profileData?.name || "");
 
@@ -86,11 +194,12 @@ export default function DashboardScreen() {
       const statsData = calculateStats(
         response.documents,
         selectedMonth,
-        profileData
+        profileData,
       );
 
-      setStats(statsData);
+      console.log("fetchDashboardData: statsData", statsData);
 
+      setStats(statsData);
     } catch (err) {
       console.log(err);
     } finally {
@@ -107,12 +216,10 @@ export default function DashboardScreen() {
   const totalDaysInMonth = new Date(
     new Date().getFullYear(),
     selectedMonth + 1,
-    0
+    0,
   ).getDate();
 
-  const progressPercent = Math.round(
-    (stats.days / totalDaysInMonth) * 100
-  );
+  const progressPercent = Math.round((stats.days / totalDaysInMonth) * 100);
 
   if (loading) {
     return (
@@ -141,10 +248,22 @@ export default function DashboardScreen() {
           onPress={() => setShowMonthPicker(true)}
         >
           <Text style={styles.monthText}>
-            {[
-              "Jan","Feb","Mar","Apr","May","Jun",
-              "Jul","Aug","Sep","Oct","Nov","Dec",
-            ][selectedMonth]}
+            {
+              [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ][selectedMonth]
+            }
           </Text>
         </TouchableOpacity>
       </View>
@@ -209,8 +328,18 @@ export default function DashboardScreen() {
         <View style={styles.modalBg}>
           <View style={styles.monthModal}>
             {[
-              "January","February","March","April","May","June",
-              "July","August","September","October","November","December",
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
             ].map((month, index) => (
               <TouchableOpacity
                 key={index}
